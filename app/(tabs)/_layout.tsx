@@ -1,8 +1,8 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
-import HomeIconSvg from '../../assets/images/home-icon.svg';
 import EventsIconSvg from '../../assets/images/events-icon.svg';
+import HomeIconSvg from '../../assets/images/home-icon.svg';
 
 // Tab Icon Components using SVG
 const HomeIcon = ({ color, focused }: { color: string, focused: boolean }) => {
