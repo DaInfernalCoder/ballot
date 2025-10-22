@@ -47,11 +47,11 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       {/* Header with Logo and Location Pin */}
       <View style={styles.header}>
-        <Image 
-          source={require('@/assets/images/ballot-logo-258118.png')} 
+        <Image
+          source={require('@/assets/images/ballot-logo-258118.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -61,7 +61,7 @@ export default function HomeScreen() {
       </View>
 
       {/* Main Content - Event Card */}
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -69,34 +69,34 @@ export default function HomeScreen() {
         <View style={styles.cardContainer}>
           {/* Main Event Card */}
           <View style={styles.eventCard}>
-            <Image 
-              source={require('@/assets/images/event-image.png')} 
+            <Image
+              source={require('@/assets/images/event-image.png')}
               style={styles.eventImage}
               resizeMode="cover"
             />
-            
+
             <View style={styles.eventContent}>
               <Text style={styles.eventTitle}>
                 Community Meeting - Discuss Development Plans
               </Text>
-              
+
               <View style={styles.eventDetails}>
                 <View style={styles.detailRow}>
                   <LocationIcon />
                   <Text style={styles.detailText}>Phoenix, Arizona</Text>
                 </View>
-                
+
                 <View style={styles.detailRow}>
                   <CalendarIcon />
                   <Text style={styles.detailText}>Dec 12, 2024 • 7:30 PM</Text>
                 </View>
               </View>
-              
+
               <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.viewDetailsButton}>
                   <Text style={styles.viewDetailsText}>View Details</Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity style={styles.shareButton}>
                   <ShareIcon />
                 </TouchableOpacity>

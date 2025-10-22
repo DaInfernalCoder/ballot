@@ -2,11 +2,11 @@ import React from 'react';
 import { Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-    runOnJS,
-    useAnimatedStyle,
-    useSharedValue,
-    withSpring,
-    withTiming,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
@@ -41,11 +41,14 @@ export default function SwipeableEventCard({
   onDeletePress,
 }: SwipeableEventCardProps) {
   const translateX = useSharedValue(0);
+  const contextX = useSharedValue(0);
   const itemHeight = useSharedValue(1);
   const opacity = useSharedValue(1);
+  const isDeleting = useSharedValue(false);
 
   const handleDelete = () => {
     'worklet';
+    isDeleting.value = true;
     // Animate out
     opacity.value = withTiming(0, { duration: 200 });
     itemHeight.value = withTiming(0, { duration: 250 }, () => {
@@ -55,13 +58,27 @@ export default function SwipeableEventCard({
 
   const gesture = Gesture.Pan()
     .activeOffsetX([-10, 10])
+    .onStart(() => {
+      // Store the current position when gesture starts for smooth continuation
+      contextX.value = translateX.value;
+    })
     .onUpdate((event) => {
-      // Only allow left swipe (negative translation)
-      if (event.translationX < 0) {
-        translateX.value = Math.max(event.translationX, -DELETE_BUTTON_WIDTH - 20);
-      }
+      // Don't allow interaction during deletion animation
+      if (isDeleting.value) return;
+      
+      // Smoothly update position based on starting context + gesture translation
+      // This allows continuous swiping in both directions
+      const newTranslation = contextX.value + event.translationX;
+      
+      translateX.value = Math.max(
+        Math.min(newTranslation, 0), // Cap at 0 (can't swipe right past original position)
+        -DELETE_BUTTON_WIDTH - 20 // Cap at delete button width
+      );
     })
     .onEnd((event) => {
+      // Don't process gesture end if we're deleting
+      if (isDeleting.value) return;
+      
       const shouldDelete = translateX.value < -SWIPE_THRESHOLD_FULL;
       
       if (shouldDelete) {
