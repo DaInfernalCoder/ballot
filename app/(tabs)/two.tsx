@@ -1,4 +1,7 @@
+import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
+import SwipeableEventCard from '@/components/SwipeableEventCard';
 import { Text, View } from '@/components/Themed';
+import { useState } from 'react';
 import { Image, View as RNView, ScrollView, StatusBar, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -75,6 +78,46 @@ const eventsData = [
 ];
 
 export default function EventsScreen() {
+  const [deletedEvents, setDeletedEvents] = useState<number[]>([]);
+  const [confirmModal, setConfirmModal] = useState<{
+    visible: boolean;
+    eventId: number | null;
+    eventName: string;
+  }>({
+    visible: false,
+    eventId: null,
+    eventName: '',
+  });
+
+  // Filter out deleted events
+  const visibleEvents = eventsData.map((group) => ({
+    ...group,
+    events: group.events.filter((e) => !deletedEvents.includes(e.id)),
+  })).filter((group) => group.events.length > 0); // Remove empty date groups
+
+  const handleDeletePress = (eventId: number, eventName: string) => {
+    setConfirmModal({
+      visible: true,
+      eventId,
+      eventName,
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (confirmModal.eventId !== null) {
+      setDeletedEvents([...deletedEvents, confirmModal.eventId]);
+    }
+    setConfirmModal({ visible: false, eventId: null, eventName: '' });
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmModal({ visible: false, eventId: null, eventName: '' });
+  };
+
+  const handleAutoDelete = (eventId: number) => {
+    setDeletedEvents([...deletedEvents, eventId]);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -93,7 +136,7 @@ export default function EventsScreen() {
         contentContainerStyle={styles.eventListContent}
         showsVerticalScrollIndicator={false}
       >
-        {eventsData.map((group, groupIndex) => (
+        {visibleEvents.map((group, groupIndex) => (
           <View key={groupIndex} style={styles.eventGroup}>
             {/* Date Header */}
             <Text style={styles.dateHeader}>{group.date}</Text>
@@ -101,34 +144,48 @@ export default function EventsScreen() {
             {/* Events Container */}
             <View style={styles.eventContainer}>
               {group.events.map((event) => (
-                <TouchableOpacity key={event.id} style={styles.eventCard}>
-                  <Image source={event.image} style={styles.eventImage} resizeMode="cover" />
-                  
-                  <RNView style={styles.eventDetails}>
-                    <Text style={styles.eventName}>{event.name}</Text>
+                <SwipeableEventCard
+                  key={event.id}
+                  onDelete={() => handleAutoDelete(event.id)}
+                  onDeletePress={() => handleDeletePress(event.id, event.name)}
+                >
+                  <TouchableOpacity style={styles.eventCard}>
+                    <Image source={event.image} style={styles.eventImage} resizeMode="cover" />
                     
-                    <RNView style={styles.eventMeta}>
-                      <RNView style={styles.metaRow}>
-                        <LocationIcon />
-                        <Text style={styles.metaText}>{event.location}</Text>
-                      </RNView>
+                    <RNView style={styles.eventDetails}>
+                      <Text style={styles.eventName}>{event.name}</Text>
                       
-                      <RNView style={styles.metaRow}>
-                        <CalendarIcon />
-                        <Text style={styles.metaText}>{event.datetime}</Text>
+                      <RNView style={styles.eventMeta}>
+                        <RNView style={styles.metaRow}>
+                          <LocationIcon />
+                          <Text style={styles.metaText}>{event.location}</Text>
+                        </RNView>
+                        
+                        <RNView style={styles.metaRow}>
+                          <CalendarIcon />
+                          <Text style={styles.metaText}>{event.datetime}</Text>
+                        </RNView>
                       </RNView>
                     </RNView>
-                  </RNView>
-                  
-                  <TouchableOpacity style={styles.bookmarkButton}>
-                    <BookmarkIcon />
+                    
+                    <TouchableOpacity style={styles.bookmarkButton}>
+                      <BookmarkIcon />
+                    </TouchableOpacity>
                   </TouchableOpacity>
-                </TouchableOpacity>
+                </SwipeableEventCard>
               ))}
             </View>
           </View>
         ))}
       </ScrollView>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        visible={confirmModal.visible}
+        eventName={confirmModal.eventName}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </View>
   );
 }
@@ -195,7 +252,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.36,
   },
   eventContainer: {
-    gap: 12,
+    // Gap removed - handled by SwipeableEventCard marginBottom
   },
   eventCard: {
     flexDirection: 'row',
