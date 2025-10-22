@@ -1,39 +1,46 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import HomeIconSvg from '../../assets/images/home-icon.svg';
+import EventsIconSvg from '../../assets/images/events-icon.svg';
 
-// Tab Icon Components
-const HomeIcon = ({ color }: { color: string }) => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
+// Tab Icon Components using SVG
+const HomeIcon = ({ color, focused }: { color: string, focused: boolean }) => {
+  const opacity = focused ? 1 : 0.54;
+  return (
+    <HomeIconSvg
+      width={24}
+      height={24}
       fill={color}
+      opacity={opacity}
     />
-  </Svg>
-);
+  );
+};
 
-const EventsIcon = ({ color }: { color: string }) => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"
+const EventsIcon = ({ color, focused }: { color: string, focused: boolean }) => {
+  const opacity = focused ? 1 : 0.54;
+  return (
+    <EventsIconSvg
+      width={24}
+      height={24}
       fill={color}
+      opacity={opacity}
     />
-  </Svg>
-);
+  );
+};
 
-// Home Indicator Component
+// Home Indicator Component - iOS style
 const HomeIndicator = () => (
   <View 
     style={{ 
       position: 'absolute',
-      bottom: 21,
+      bottom: 8,
       left: '50%',
       marginLeft: -74,
       width: 148,
       height: 5,
       backgroundColor: '#1E1E1E',
-      borderRadius: 2.5,
+      borderRadius: 100,
     }} 
   />
 );
@@ -44,23 +51,31 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
           backgroundColor: '#151515',
           borderTopWidth: 0,
           height: 98,
           paddingTop: 15,
-          paddingBottom: 0,
-          paddingHorizontal: 0,
-          shadowColor: '#000',
+          paddingBottom: 34,
+          paddingLeft: 24,
+          paddingRight: 24,
+          // iOS Shadow
+          shadowColor: '#000000',
           shadowOffset: { width: 0, height: -20 },
           shadowOpacity: 0.08,
           shadowRadius: 60,
+          // Android Shadow
           elevation: 20,
         },
         tabBarActiveTintColor: '#FFFFFF',
         tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.54)',
         tabBarItemStyle: {
-          paddingTop: 2,
-          paddingBottom: 34,
+          paddingTop: 1.5,
+          paddingBottom: 0,
+          gap: 4,
         },
         tabBarIconStyle: {
           marginBottom: 0,
@@ -68,7 +83,6 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontSize: 12,
           lineHeight: 18,
-          letterSpacing: 0.06,
           marginTop: 4,
         },
         tabBarBackground: () => (
@@ -84,34 +98,14 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused, color }) => (
-            <HomeIcon color={color} />
-          ),
-          tabBarLabelStyle: {
-            fontFamily: 'System',
-            fontWeight: '600',
-            fontSize: 12,
-            lineHeight: 18,
-            letterSpacing: -0.24,
-            marginTop: 4,
-          },
+          tabBarIcon: ({ color, focused }) => <HomeIcon color={color} focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="two"
         options={{
           title: 'Events',
-          tabBarIcon: ({ focused, color }) => (
-            <EventsIcon color={color} />
-          ),
-          tabBarLabelStyle: {
-            fontFamily: 'System',
-            fontWeight: '400',
-            fontSize: 12,
-            lineHeight: 18,
-            letterSpacing: 0.06,
-            marginTop: 4,
-          },
+          tabBarIcon: ({ color, focused }) => <EventsIcon color={color} focused={focused} />,
         }}
       />
     </Tabs>

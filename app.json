@@ -14,13 +14,15 @@
       "backgroundColor": "#000000"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ballot.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
+      "package": "com.ballot.app",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },

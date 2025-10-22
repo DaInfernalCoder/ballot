@@ -67,10 +67,6 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.cardContainer}>
-          {/* Decorative Background Elements */}
-          <View style={styles.decorativeTop} />
-          <View style={styles.decorativeMiddle} />
-          
           {/* Main Event Card */}
           <View style={styles.eventCard}>
             <Image 
@@ -146,36 +142,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 120,
   },
   cardContainer: {
     position: 'relative',
     marginTop: 25,
-  },
-  decorativeTop: {
-    position: 'absolute',
-    top: 0,
-    left: 41,
-    width: 256,
-    height: 63,
-    backgroundColor: '#0D0D0D',
-    borderRadius: 21.56,
-    borderWidth: 0.9,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
-    opacity: 0.8,
-    zIndex: 0,
-  },
-  decorativeMiddle: {
-    position: 'absolute',
-    top: 11,
-    left: 23,
-    width: 292,
-    height: 71,
-    backgroundColor: '#121212',
-    borderRadius: 21.56,
-    borderWidth: 0.9,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
-    zIndex: 1,
   },
   eventCard: {
     backgroundColor: '#151515',
