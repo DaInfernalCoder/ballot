@@ -57,7 +57,10 @@ export function HomeEventCard({
 
   return (
     <SwipeActionCard
-      onSwipeRight={() => addSavedEvent({ id, title, location, date, image })}
+      onSwipeRight={() => {
+        addSavedEvent({ id, title, location, date, image });
+        onDismiss(id);
+      }}
       onSwipeLeft={() => onDismiss(id)}
     >
       <FlippableCard

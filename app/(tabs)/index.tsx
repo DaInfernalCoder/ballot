@@ -47,6 +47,12 @@ const ShareIcon = () => (
   </Svg>
 );
 
+const RefreshIcon = () => (
+  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+    <Path d="M17.65 6.35A7.95 7.95 0 0012 4a8 8 0 108 8h-2a6 6 0 11-6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" fill="white" fillOpacity={0.8} />
+  </Svg>
+);
+
 export default function HomeScreen() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -177,6 +183,11 @@ export default function HomeScreen() {
     }
   };
 
+  const handleRefresh = () => {
+    setDismissedIds(new Set());
+    setFlippedIndex(null);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -275,7 +286,15 @@ export default function HomeScreen() {
         )}
         {viewportHeight > 0 && EVENTS_LENGTH === 0 && (
           <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ color: 'rgba(255,255,255,0.6)' }}>No more events</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>No more events</Text>
+            <TouchableOpacity
+              onPress={handleRefresh}
+              style={{ width: 44, height: 44, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' }}
+              accessibilityRole="button"
+              accessibilityLabel="Refresh events"
+            >
+              <RefreshIcon />
+            </TouchableOpacity>
           </View>
         )}
       </View>
