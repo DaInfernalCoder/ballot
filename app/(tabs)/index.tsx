@@ -2,7 +2,7 @@ import HomeEventCard from '@/components/home-event-card/HomeEventCard';
 import { Text, View } from '@/components/Themed';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Keyboard, StatusBar, StyleSheet, TextInput, TouchableOpacity, VirtualizedList } from 'react-native';
+import { Image, Keyboard, StatusBar, StyleSheet, TextInput, TouchableOpacity, TouchableWithoutFeedback, VirtualizedList } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
@@ -112,22 +112,6 @@ export default function HomeScreen() {
     });
   }, [isExpanded]);
 
-  // Handle keyboard dismiss
-  useEffect(() => {
-    const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
-      () => {
-        if (isExpanded && !searchText) {
-          setIsExpanded(false);
-        }
-      }
-    );
-
-    return () => {
-      keyboardDidHideListener.remove();
-    };
-  }, [isExpanded, searchText]);
-
   const animatedStyle = useAnimatedStyle(() => {
     return {
       width: interpolate(
@@ -178,8 +162,13 @@ export default function HomeScreen() {
   };
 
   const handleBlur = () => {
-    if (!searchText) {
+    setIsExpanded(false);
+  };
+
+  const handleOutsidePress = () => {
+    if (isExpanded) {
       setIsExpanded(false);
+      Keyboard.dismiss();
     }
   };
 
@@ -227,6 +216,9 @@ export default function HomeScreen() {
                   value={searchText}
                   onChangeText={setSearchText}
                   onBlur={handleBlur}
+                  onSubmitEditing={() => setIsExpanded(false)}
+                  returnKeyType="done"
+                  blurOnSubmit={true}
                   autoFocus={true}
                   autoCorrect={false}
                   autoCapitalize="words"
@@ -238,8 +230,9 @@ export default function HomeScreen() {
       </View>
 
       {/* Main Content - Vertically paged list of event cards */}
-      <View style={{ flex: 1 }} onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}>
-        {viewportHeight > 0 && EVENTS_LENGTH > 0 && (
+      <TouchableWithoutFeedback onPress={handleOutsidePress}>
+        <View style={{ flex: 1 }} onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}>
+          {viewportHeight > 0 && EVENTS_LENGTH > 0 && (
           <VirtualizedList
             data={VISIBLE_EVENTS}
             getItemCount={() => INFINITE_COUNT}
@@ -297,7 +290,8 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         )}
-      </View>
+        </View>
+      </TouchableWithoutFeedback>
     </View>
   );
 }
