@@ -1,87 +1,16 @@
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 import SwipeableEventCard from '@/components/SwipeableEventCard';
 import { Text, View } from '@/components/Themed';
+import { useEvents } from '@/contexts/events-context';
 import { useState } from 'react';
 import { Image, View as RNView, ScrollView, StatusBar, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-// SVG Icons
-const BookmarkIcon = () => (
-  <Svg width={20} height={20} viewBox="0 0 20 20" fill="none">
-    <Path
-      d="M14.167 2.5H5.833c-.917 0-1.658.75-1.658 1.667L4.166 17.5l5.834-2.5 5.833 2.5V4.167c0-.917-.75-1.667-1.666-1.667z"
-      stroke="rgba(255, 255, 255, 0.54)"
-      strokeWidth={2}
-      fill="none"
-    />
-  </Svg>
-);
-
-const FilterIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 5h18M7 11h10M12 17h3" stroke="rgba(255, 255, 255, 0.54)" strokeWidth={2} strokeLinecap="round" />
-  </Svg>
-);
-
-// Event data based on Figma
-const eventsData = [
-  {
-    date: '21 Oct 2024',
-    events: [
-      {
-        id: 1,
-        name: 'Community Forum',
-        location: 'Sunset Park, Arizona',
-        datetime: 'Nov 2, 2024 • 6:00 PM',
-        image: require('@/assets/images/event1.png'),
-      },
-      {
-        id: 2,
-        name: 'Creek Cleanup',
-        location: 'Sunset Park, Arizona',
-        datetime: 'Nov 2, 2024 • 6:00 PM',
-        image: require('@/assets/images/event2.png'),
-      },
-    ],
-  },
-  {
-    date: '28 Oct 2024',
-    events: [
-      {
-        id: 3,
-        name: 'Town Hall Meeting',
-        location: 'Mountain View, Arizona',
-        datetime: 'Nov 5, 2024 • 7:00 PM',
-        image: require('@/assets/images/event3.png'),
-      },
-      {
-        id: 4,
-        name: 'Town Hall Meeting',
-        location: 'Mountain View, Arizona',
-        datetime: 'Nov 5, 2024 • 7:00 PM',
-        image: require('@/assets/images/event4.png'),
-      },
-    ],
-  },
-  {
-    date: '31 Oct 2024',
-    events: [
-      {
-        id: 5,
-        name: 'Community Meeting',
-        location: 'Mountain View, Arizona',
-        datetime: 'Nov 5, 2024 • 7:00 PM',
-        image: require('@/assets/images/event5.png'),
-      },
-    ],
-  },
-];
-
 export default function EventsScreen() {
-  const [deletedEvents, setDeletedEvents] = useState<number[]>([]);
+  const { savedEvents, removeSavedEventById } = useEvents();
   const [confirmModal, setConfirmModal] = useState<{
     visible: boolean;
-    eventId: number | null;
+    eventId: string | null;
     eventName: string;
   }>({
     visible: false,
@@ -89,94 +18,71 @@ export default function EventsScreen() {
     eventName: '',
   });
 
-  // Filter out deleted events
-  const visibleEvents = eventsData.map((group) => ({
-    ...group,
-    events: group.events.filter((e) => !deletedEvents.includes(e.id)),
-  })).filter((group) => group.events.length > 0); // Remove empty date groups
-
-  const handleDeletePress = (eventId: number, eventName: string) => {
-    setConfirmModal({
-      visible: true,
-      eventId,
-      eventName,
-    });
+  const handleDeletePress = (eventId: string, eventName: string) => {
+    setConfirmModal({ visible: true, eventId, eventName });
   };
 
   const handleConfirmDelete = () => {
-    if (confirmModal.eventId !== null) {
-      setDeletedEvents([...deletedEvents, confirmModal.eventId]);
-    }
+    if (confirmModal.eventId) removeSavedEventById(confirmModal.eventId);
     setConfirmModal({ visible: false, eventId: null, eventName: '' });
   };
 
-  const handleCancelDelete = () => {
-    setConfirmModal({ visible: false, eventId: null, eventName: '' });
-  };
+  const handleCancelDelete = () => setConfirmModal({ visible: false, eventId: null, eventName: '' });
 
-  const handleAutoDelete = (eventId: number) => {
-    setDeletedEvents([...deletedEvents, eventId]);
-  };
+  const hasAny = savedEvents.length > 0;
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Upcoming Events</Text>
-        <TouchableOpacity>
-          <FilterIcon />
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Saved Events</Text>
       </View>
 
       {/* Event List */}
       <ScrollView
         style={styles.eventList}
-        contentContainerStyle={styles.eventListContent}
+        contentContainerStyle={[styles.eventListContent, !hasAny && { flex: 1, justifyContent: 'center', alignItems: 'center' }]}
         showsVerticalScrollIndicator={false}
       >
-        {visibleEvents.map((group, groupIndex) => (
-          <View key={groupIndex} style={styles.eventGroup}>
-            {/* Date Header */}
-            <Text style={styles.dateHeader}>{group.date}</Text>
-            
-            {/* Events Container */}
+        {!hasAny && (
+          <Text style={{ color: 'rgba(255,255,255,0.6)' }}>No saved events yet. Swipe right on a card to add.</Text>
+        )}
+
+        {hasAny && (
+          <View style={styles.eventGroup}>
             <View style={styles.eventContainer}>
-              {group.events.map((event) => (
+              {savedEvents.map((event) => (
                 <SwipeableEventCard
                   key={event.id}
-                  onDelete={() => handleAutoDelete(event.id)}
-                  onDeletePress={() => handleDeletePress(event.id, event.name)}
+                  onDelete={() => removeSavedEventById(event.id)}
+                  onDeletePress={() => handleDeletePress(event.id, event.title)}
                 >
                   <TouchableOpacity style={styles.eventCard}>
                     <Image source={event.image} style={styles.eventImage} resizeMode="cover" />
-                    
+
                     <RNView style={styles.eventDetails}>
-                      <Text style={styles.eventName}>{event.name}</Text>
-                      
+                      <Text style={styles.eventName}>{event.title}</Text>
+
                       <RNView style={styles.eventMeta}>
                         <RNView style={styles.metaRow}>
                           <LocationIcon />
                           <Text style={styles.metaText}>{event.location}</Text>
                         </RNView>
-                        
+
                         <RNView style={styles.metaRow}>
                           <CalendarIcon />
-                          <Text style={styles.metaText}>{event.datetime}</Text>
+                          <Text style={styles.metaText}>{event.date}</Text>
                         </RNView>
                       </RNView>
                     </RNView>
-                    
-                    <TouchableOpacity style={styles.bookmarkButton}>
-                      <BookmarkIcon />
-                    </TouchableOpacity>
                   </TouchableOpacity>
                 </SwipeableEventCard>
               ))}
             </View>
           </View>
-        ))}
+        )}
       </ScrollView>
 
       {/* Delete Confirmation Modal */}
@@ -215,9 +121,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 71,
     paddingBottom: 17,
@@ -294,11 +197,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     lineHeight: 16.5,
     flex: 1,
-  },
-  bookmarkButton: {
-    width: 20,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });
