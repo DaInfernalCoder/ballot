@@ -79,7 +79,7 @@ export default function HomeScreen() {
       width: interpolate(
         expansion.value,
         [0, 1],
-        [40, 200]
+        [40, 170]
       ),
       height: 48,
       borderRadius: interpolate(
@@ -252,7 +252,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderColor: 'rgba(255, 255, 255, 0.54)',
-    overflow: 'hidden',
   },
   iconContainer: {
     position: 'absolute',
