@@ -1,8 +1,8 @@
 import FlippableCard from '@/components/FlippableCard';
 import { Text, View } from '@/components/Themed';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { useEffect, useState } from 'react';
-import { FlatList, Image, Keyboard, StatusBar, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Image, Keyboard, StatusBar, StyleSheet, TextInput, TouchableOpacity, VirtualizedList } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
@@ -85,6 +85,16 @@ export default function HomeScreen() {
       image: require('@/assets/images/event3.png'),
     },
   ];
+
+  const EVENTS_LENGTH = EVENTS.length;
+  const INFINITE_COUNT = 100000;
+  const INITIAL_INDEX = useMemo(() => {
+    if (EVENTS_LENGTH === 0) return 0;
+    const mid = Math.floor(INFINITE_COUNT / 2);
+    return mid - (mid % EVENTS_LENGTH); // align to first item
+  }, [EVENTS_LENGTH]);
+
+  // Virtualized infinite mapping via modulo over EVENTS
 
   // Animate expansion when isExpanded changes
   useEffect(() => {
@@ -217,16 +227,27 @@ export default function HomeScreen() {
       {/* Main Content - Vertically paged list of event cards */}
       <View style={{ flex: 1 }} onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}>
         {viewportHeight > 0 && (
-          <FlatList
+          <VirtualizedList
             data={EVENTS}
-            keyExtractor={(e) => e.id}
+            getItemCount={() => INFINITE_COUNT}
+            getItem={(data, index) => {
+              const arr = data as typeof EVENTS;
+              if (!arr.length) return null as any;
+              return arr[index % arr.length];
+            }}
+            keyExtractor={(_, i) => `${i}`}
             pagingEnabled
             decelerationRate="fast"
             snapToInterval={viewportHeight}
             snapToAlignment="start"
             showsVerticalScrollIndicator={false}
             scrollEventThrottle={16}
+            removeClippedSubviews
+            windowSize={3}
+            maxToRenderPerBatch={3}
+            initialNumToRender={3}
             getItemLayout={(_, i) => ({ length: viewportHeight, offset: viewportHeight * i, index: i })}
+            initialScrollIndex={INITIAL_INDEX}
             onMomentumScrollEnd={(e) => {
               const i = Math.round(e.nativeEvent.contentOffset.y / viewportHeight);
               if (flippedIndex !== null && flippedIndex !== i) setFlippedIndex(null);
