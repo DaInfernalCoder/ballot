@@ -1,5 +1,7 @@
 import { Text, View } from '@/components/Themed';
-import { Image, ScrollView, StatusBar, StyleSheet, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Keyboard, ScrollView, StatusBar, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
 // SVG Icon Components
@@ -44,6 +46,89 @@ const ShareIcon = () => (
 );
 
 export default function HomeScreen() {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const expansion = useSharedValue(0);
+
+  // Animate expansion when isExpanded changes
+  useEffect(() => {
+    expansion.value = withSpring(isExpanded ? 1 : 0, {
+      damping: 20,
+      stiffness: 150,
+    });
+  }, [isExpanded]);
+
+  // Handle keyboard dismiss
+  useEffect(() => {
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        if (isExpanded && !searchText) {
+          setIsExpanded(false);
+        }
+      }
+    );
+
+    return () => {
+      keyboardDidHideListener.remove();
+    };
+  }, [isExpanded, searchText]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      width: interpolate(
+        expansion.value,
+        [0, 1],
+        [40, 200]
+      ),
+      height: 48,
+      borderRadius: interpolate(
+        expansion.value,
+        [0, 1],
+        [20, 8]
+      ),
+      backgroundColor: interpolate(
+        expansion.value,
+        [0, 1],
+        [0, 0.54]
+      ) as any,
+      borderWidth: interpolate(
+        expansion.value,
+        [0, 1],
+        [0, 1]
+      ),
+    };
+  });
+
+  const iconAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: interpolate(expansion.value, [0, 0.3], [1, 0]),
+      transform: [
+        {
+          scale: interpolate(expansion.value, [0, 0.3], [1, 0.8]),
+        },
+      ],
+    };
+  });
+
+  const textInputAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: interpolate(expansion.value, [0.5, 1], [0, 1]),
+    };
+  });
+
+  const handlePress = () => {
+    if (!isExpanded) {
+      setIsExpanded(true);
+    }
+  };
+
+  const handleBlur = () => {
+    if (!searchText) {
+      setIsExpanded(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -55,8 +140,41 @@ export default function HomeScreen() {
           style={styles.logo}
           resizeMode="contain"
         />
-        <TouchableOpacity style={styles.locationButton}>
-          <MapPinIcon />
+        <TouchableOpacity 
+          style={styles.locationButtonContainer}
+          onPress={handlePress}
+          activeOpacity={1}
+        >
+          <Animated.View style={[styles.locationButton, animatedStyle]}>
+            <Animated.View style={[styles.iconContainer, iconAnimatedStyle]}>
+              <MapPinIcon />
+            </Animated.View>
+            {isExpanded && (
+              <Animated.View style={[styles.textInputContainer, textInputAnimatedStyle]}>
+                <Svg width={20} height={24} viewBox="0 0 24 24" fill="none" style={styles.inputIcon}>
+                  <Path
+                    d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+                    fill="white"
+                    fillOpacity={0.54}
+                    stroke="white"
+                    strokeOpacity={0.54}
+                    strokeWidth={2}
+                  />
+                </Svg>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="District/County"
+                  placeholderTextColor="rgba(255, 255, 255, 0.38)"
+                  value={searchText}
+                  onChangeText={setSearchText}
+                  onBlur={handleBlur}
+                  autoFocus={true}
+                  autoCorrect={false}
+                  autoCapitalize="words"
+                />
+              </Animated.View>
+            )}
+          </Animated.View>
         </TouchableOpacity>
       </View>
 
@@ -127,11 +245,39 @@ const styles = StyleSheet.create({
     width: 117,
     height: 29,
   },
+  locationButtonContainer: {
+    position: 'relative',
+  },
   locationButton: {
-    width: 40,
-    height: 43,
     justifyContent: 'center',
     alignItems: 'center',
+    borderColor: 'rgba(255, 255, 255, 0.54)',
+    overflow: 'hidden',
+  },
+  iconContainer: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  textInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 8,
+    width: '100%',
+    height: '100%',
+  },
+  inputIcon: {
+    flexShrink: 0,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontFamily: 'Poppins',
+    fontWeight: '400',
+    lineHeight: 21,
+    letterSpacing: 0.4,
   },
   locationIcon: {
     width: 34,
