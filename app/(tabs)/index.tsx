@@ -1,7 +1,8 @@
 import FlippableCard from '@/components/FlippableCard';
 import { Text, View } from '@/components/Themed';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useEffect, useState } from 'react';
-import { Image, Keyboard, ScrollView, StatusBar, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { FlatList, Image, Keyboard, StatusBar, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
@@ -50,7 +51,40 @@ export default function HomeScreen() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchText, setSearchText] = useState('');
   const expansion = useSharedValue(0);
-  const [flipped, setFlipped] = useState(false);
+  const [flippedIndex, setFlippedIndex] = useState<number | null>(null);
+  const tabBarHeight = useBottomTabBarHeight();
+  const [containerHeight, setContainerHeight] = useState(0);
+  const viewportHeight = Math.max(0, containerHeight - tabBarHeight);
+
+  const EVENTS: Array<{
+    id: string;
+    title: string;
+    location: string;
+    date: string;
+    image: any;
+  }> = [
+    {
+      id: '1',
+      title: 'Community Meeting - Discuss Development Plans',
+      location: 'Phoenix, Arizona',
+      date: 'Dec 12, 2024 • 7:30 PM',
+      image: require('@/assets/images/event1.png'),
+    },
+    {
+      id: '2',
+      title: 'Town Hall - Education Reform Debate',
+      location: 'Austin, Texas',
+      date: 'Jan 08, 2025 • 6:00 PM',
+      image: require('@/assets/images/event2.png'),
+    },
+    {
+      id: '3',
+      title: 'Policy Forum - Climate Action Strategy',
+      location: 'Seattle, Washington',
+      date: 'Feb 02, 2025 • 5:30 PM',
+      image: require('@/assets/images/event3.png'),
+    },
+  ];
 
   // Animate expansion when isExpanded changes
   useEffect(() => {
@@ -180,74 +214,90 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Main Content - Event Card */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.cardContainer}>
-          {/* Main Event Card - Flippable */}
-          <FlippableCard
-            style={styles.eventCard}
-            flipped={flipped}
-            front={
-              <>
-                <Image
-                  source={require('@/assets/images/event-image.png')}
-                  style={styles.eventImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.eventContent}>
-                  <Text style={styles.eventTitle}>
-                    Community Meeting - Discuss Development Plans
-                  </Text>
-                  <View style={styles.eventDetails}>
-                    <View style={styles.detailRow}>
-                      <LocationIcon />
-                      <Text style={styles.detailText}>Phoenix, Arizona</Text>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <CalendarIcon />
-                      <Text style={styles.detailText}>Dec 12, 2024 • 7:30 PM</Text>
-                    </View>
-                  </View>
-                  <View style={styles.buttonContainer}>
-                    <TouchableOpacity style={styles.viewDetailsButton} onPress={() => setFlipped(true)}>
-                      <Text style={styles.viewDetailsText}>View Details</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.shareButton}>
-                      <ShareIcon />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </>
-            }
-            back={
-              <View style={styles.backFaceContainer}>
-                <View style={styles.eventContent}>
-                  <Text style={styles.backTitle}>
-                    Community Meeting - Discuss Development Plans
-                  </Text>
-                  <View style={styles.eventDetails}>
-                    <View style={styles.detailRow}>
-                      <LocationIcon />
-                      <Text style={styles.detailText}>Phoenix, Arizona</Text>
-                    </View>
-                    <View style={styles.detailRow}>
-                      <CalendarIcon />
-                      <Text style={styles.detailText}>Dec 12, 2024 • 7:30 PM</Text>
-                    </View>
-                  </View>
-                  <TouchableOpacity style={styles.backButton} onPress={() => setFlipped(false)}>
-                    <Text style={styles.backButtonText}>Back</Text>
-                  </TouchableOpacity>
+      {/* Main Content - Vertically paged list of event cards */}
+      <View style={{ flex: 1 }} onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}>
+        {viewportHeight > 0 && (
+          <FlatList
+            data={EVENTS}
+            keyExtractor={(e) => e.id}
+            pagingEnabled
+            decelerationRate="fast"
+            snapToInterval={viewportHeight}
+            snapToAlignment="start"
+            showsVerticalScrollIndicator={false}
+            scrollEventThrottle={16}
+            getItemLayout={(_, i) => ({ length: viewportHeight, offset: viewportHeight * i, index: i })}
+            onMomentumScrollEnd={(e) => {
+              const i = Math.round(e.nativeEvent.contentOffset.y / viewportHeight);
+              if (flippedIndex !== null && flippedIndex !== i) setFlippedIndex(null);
+            }}
+            renderItem={({ item, index }) => (
+              <View style={{ height: viewportHeight, paddingHorizontal: 20 }}>
+                <View style={styles.cardContainer}>
+                  <FlippableCard
+                    style={styles.eventCard}
+                    flipped={flippedIndex === index}
+                    front={
+                      <>
+                        <Image
+                          source={item.image}
+                          style={styles.eventImage}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.eventContent}>
+                          <Text style={styles.eventTitle}>
+                            {item.title}
+                          </Text>
+                          <View style={styles.eventDetails}>
+                            <View style={styles.detailRow}>
+                              <LocationIcon />
+                              <Text style={styles.detailText}>{item.location}</Text>
+                            </View>
+                            <View style={styles.detailRow}>
+                              <CalendarIcon />
+                              <Text style={styles.detailText}>{item.date}</Text>
+                            </View>
+                          </View>
+                          <View style={styles.buttonContainer}>
+                            <TouchableOpacity style={styles.viewDetailsButton} onPress={() => setFlippedIndex(index)}>
+                              <Text style={styles.viewDetailsText}>View Details</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.shareButton}>
+                              <ShareIcon />
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      </>
+                    }
+                    back={
+                      <View style={styles.backFaceContainer}>
+                        <View style={styles.eventContent}>
+                          <Text style={styles.backTitle}>
+                            {item.title}
+                          </Text>
+                          <View style={styles.eventDetails}>
+                            <View style={styles.detailRow}>
+                              <LocationIcon />
+                              <Text style={styles.detailText}>{item.location}</Text>
+                            </View>
+                            <View style={styles.detailRow}>
+                              <CalendarIcon />
+                              <Text style={styles.detailText}>{item.date}</Text>
+                            </View>
+                          </View>
+                          <TouchableOpacity style={styles.backButton} onPress={() => setFlippedIndex(null)}>
+                            <Text style={styles.backButtonText}>Back</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    }
+                  />
                 </View>
               </View>
-            }
+            )}
           />
-        </View>
-      </ScrollView>
+        )}
+      </View>
     </View>
   );
 }
