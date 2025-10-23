@@ -331,6 +331,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
+    paddingVertical: 2,
     gap: 8,
     width: '100%',
     height: '100%',
@@ -346,6 +347,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 21,
     letterSpacing: 0.4,
+    paddingVertical: 2,
   },
   locationIcon: {
     width: 34,
