@@ -1,4 +1,4 @@
-import FlippableCard from '@/components/FlippableCard';
+import HomeEventCard from '@/components/home-event-card/HomeEventCard';
 import { Text, View } from '@/components/Themed';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useEffect, useMemo, useState } from 'react';
@@ -52,6 +52,7 @@ export default function HomeScreen() {
   const [searchText, setSearchText] = useState('');
   const expansion = useSharedValue(0);
   const [flippedIndex, setFlippedIndex] = useState<number | null>(null);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const tabBarHeight = useBottomTabBarHeight();
   const [containerHeight, setContainerHeight] = useState(0);
   const viewportHeight = Math.max(0, containerHeight - tabBarHeight);
@@ -86,7 +87,8 @@ export default function HomeScreen() {
     },
   ];
 
-  const EVENTS_LENGTH = EVENTS.length;
+  const VISIBLE_EVENTS = useMemo(() => EVENTS.filter(e => !dismissedIds.has(e.id)), [dismissedIds]);
+  const EVENTS_LENGTH = VISIBLE_EVENTS.length;
   const INFINITE_COUNT = 100000;
   const INITIAL_INDEX = useMemo(() => {
     if (EVENTS_LENGTH === 0) return 0;
@@ -226,12 +228,12 @@ export default function HomeScreen() {
 
       {/* Main Content - Vertically paged list of event cards */}
       <View style={{ flex: 1 }} onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}>
-        {viewportHeight > 0 && (
+        {viewportHeight > 0 && EVENTS_LENGTH > 0 && (
           <VirtualizedList
-            data={EVENTS}
+            data={VISIBLE_EVENTS}
             getItemCount={() => INFINITE_COUNT}
             getItem={(data, index) => {
-              const arr = data as typeof EVENTS;
+              const arr = data as typeof VISIBLE_EVENTS;
               if (!arr.length) return null as any;
               return arr[index % arr.length];
             }}
@@ -255,68 +257,26 @@ export default function HomeScreen() {
             renderItem={({ item, index }) => (
               <View style={{ height: viewportHeight, paddingHorizontal: 20 }}>
                 <View style={styles.cardContainer}>
-                  <FlippableCard
-                    style={styles.eventCard}
+                  <HomeEventCard
+                    id={item.id}
+                    title={item.title}
+                    location={item.location}
+                    date={item.date}
+                    image={item.image}
                     flipped={flippedIndex === index}
-                    front={
-                      <>
-                        <Image
-                          source={item.image}
-                          style={styles.eventImage}
-                          resizeMode="cover"
-                        />
-                        <View style={styles.eventContent}>
-                          <Text style={styles.eventTitle}>
-                            {item.title}
-                          </Text>
-                          <View style={styles.eventDetails}>
-                            <View style={styles.detailRow}>
-                              <LocationIcon />
-                              <Text style={styles.detailText}>{item.location}</Text>
-                            </View>
-                            <View style={styles.detailRow}>
-                              <CalendarIcon />
-                              <Text style={styles.detailText}>{item.date}</Text>
-                            </View>
-                          </View>
-                          <View style={styles.buttonContainer}>
-                            <TouchableOpacity style={styles.viewDetailsButton} onPress={() => setFlippedIndex(index)}>
-                              <Text style={styles.viewDetailsText}>View Details</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.shareButton}>
-                              <ShareIcon />
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-                      </>
-                    }
-                    back={
-                      <View style={styles.backFaceContainer}>
-                        <View style={styles.eventContent}>
-                          <Text style={styles.backTitle}>
-                            {item.title}
-                          </Text>
-                          <View style={styles.eventDetails}>
-                            <View style={styles.detailRow}>
-                              <LocationIcon />
-                              <Text style={styles.detailText}>{item.location}</Text>
-                            </View>
-                            <View style={styles.detailRow}>
-                              <CalendarIcon />
-                              <Text style={styles.detailText}>{item.date}</Text>
-                            </View>
-                          </View>
-                          <TouchableOpacity style={styles.backButton} onPress={() => setFlippedIndex(null)}>
-                            <Text style={styles.backButtonText}>Back</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    }
+                    onFlip={() => setFlippedIndex(index)}
+                    onUnflip={() => setFlippedIndex(null)}
+                    onDismiss={(id) => setDismissedIds(prev => new Set([...prev, id]))}
                   />
                 </View>
               </View>
             )}
           />
+        )}
+        {viewportHeight > 0 && EVENTS_LENGTH === 0 && (
+          <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ color: 'rgba(255,255,255,0.6)' }}>No more events</Text>
+          </View>
         )}
       </View>
     </View>
