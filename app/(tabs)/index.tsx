@@ -1,3 +1,4 @@
+import FlippableCard from '@/components/FlippableCard';
 import { Text, View } from '@/components/Themed';
 import { useEffect, useState } from 'react';
 import { Image, Keyboard, ScrollView, StatusBar, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
@@ -49,6 +50,7 @@ export default function HomeScreen() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchText, setSearchText] = useState('');
   const expansion = useSharedValue(0);
+  const [flipped, setFlipped] = useState(false);
 
   // Animate expansion when isExpanded changes
   useEffect(() => {
@@ -185,42 +187,65 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.cardContainer}>
-          {/* Main Event Card */}
-          <View style={styles.eventCard}>
-            <Image
-              source={require('@/assets/images/event-image.png')}
-              style={styles.eventImage}
-              resizeMode="cover"
-            />
-
-            <View style={styles.eventContent}>
-              <Text style={styles.eventTitle}>
-                Community Meeting - Discuss Development Plans
-              </Text>
-
-              <View style={styles.eventDetails}>
-                <View style={styles.detailRow}>
-                  <LocationIcon />
-                  <Text style={styles.detailText}>Phoenix, Arizona</Text>
+          {/* Main Event Card - Flippable */}
+          <FlippableCard
+            style={styles.eventCard}
+            flipped={flipped}
+            front={
+              <>
+                <Image
+                  source={require('@/assets/images/event-image.png')}
+                  style={styles.eventImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.eventContent}>
+                  <Text style={styles.eventTitle}>
+                    Community Meeting - Discuss Development Plans
+                  </Text>
+                  <View style={styles.eventDetails}>
+                    <View style={styles.detailRow}>
+                      <LocationIcon />
+                      <Text style={styles.detailText}>Phoenix, Arizona</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <CalendarIcon />
+                      <Text style={styles.detailText}>Dec 12, 2024 • 7:30 PM</Text>
+                    </View>
+                  </View>
+                  <View style={styles.buttonContainer}>
+                    <TouchableOpacity style={styles.viewDetailsButton} onPress={() => setFlipped(true)}>
+                      <Text style={styles.viewDetailsText}>View Details</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.shareButton}>
+                      <ShareIcon />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-
-                <View style={styles.detailRow}>
-                  <CalendarIcon />
-                  <Text style={styles.detailText}>Dec 12, 2024 • 7:30 PM</Text>
+              </>
+            }
+            back={
+              <View style={styles.backFaceContainer}>
+                <View style={styles.eventContent}>
+                  <Text style={styles.backTitle}>
+                    Community Meeting - Discuss Development Plans
+                  </Text>
+                  <View style={styles.eventDetails}>
+                    <View style={styles.detailRow}>
+                      <LocationIcon />
+                      <Text style={styles.detailText}>Phoenix, Arizona</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <CalendarIcon />
+                      <Text style={styles.detailText}>Dec 12, 2024 • 7:30 PM</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity style={styles.backButton} onPress={() => setFlipped(false)}>
+                    <Text style={styles.backButtonText}>Back</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
-
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.viewDetailsButton}>
-                  <Text style={styles.viewDetailsText}>View Details</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.shareButton}>
-                  <ShareIcon />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
+            }
+          />
         </View>
       </ScrollView>
     </View>
@@ -309,6 +334,11 @@ const styles = StyleSheet.create({
   eventContent: {
     padding: 20,
   },
+  backFaceContainer: {
+    backgroundColor: '#151515',
+    width: '100%',
+    height: '100%',
+  },
   eventTitle: {
     fontSize: 20,
     fontWeight: '600',
@@ -316,6 +346,15 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     letterSpacing: -0.4,
     marginBottom: 20,
+  },
+  backTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    lineHeight: 27,
+    letterSpacing: -0.3,
+    marginBottom: 16,
+    opacity: 0.92,
   },
   eventDetails: {
     gap: 12,
@@ -351,6 +390,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewDetailsText: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#FFFFFF',
+    lineHeight: 22.5,
+    letterSpacing: -0.3,
+  },
+  backButton: {
+    height: 54,
+    backgroundColor: 'transparent',
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backButtonText: {
     fontSize: 15,
     fontWeight: '400',
     color: '#FFFFFF',
