@@ -344,8 +344,12 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Poppins',
     fontWeight: '400',
-    lineHeight: 21,
+    lineHeight: 22,
     letterSpacing: 0.4,
+    // Slightly raise text to avoid descender clipping
+    marginTop: -1,
+    paddingBottom: 2,
+    textAlignVertical: 'center',
   },
   locationIcon: {
     width: 34,
