@@ -36,15 +36,7 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
 
 ## Phase 2: Database & Cloud Services
 
-### 5. Supabase Setup
-- [ ] Initialize Supabase project and configure connection
-- [ ] Create database schema for users, saved events, location preferences
-- [ ] Implement Row Level Security (RLS) policies for data protection
-- [ ] Set up Supabase Storage for cached images and user data
-- [ ] Add cross-device sync for saved events
-- [ ] Configure environment variables for Supabase credentials
-
-### 6. Push Notifications
+### 5. Push Notifications
 - [ ] Install expo-notifications package
 - [ ] Configure notification permissions and settings in app.json
 - [ ] Implement local notification scheduling for saved events
@@ -52,7 +44,15 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
 - [ ] Create notification tap handling to navigate to events
 - [ ] Add notification management (cancel, update) for removed events
 
-## Phase 3: Reliability & User Experience
+## Phase 3: When we have more users and need to store data in a database
+
+### 6. Supabase Setup
+- [ ] Initialize Supabase project and configure connection
+- [ ] Create database schema for users, saved events, location preferences
+- [ ] Implement Row Level Security (RLS) policies for data protection
+- [ ] Set up Supabase Storage for cached images and user data
+- [ ] Add cross-device sync for saved events
+- [ ] Configure environment variables for Supabase credentials
 
 ## Dependencies & Environment Setup
 
