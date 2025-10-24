@@ -1,23 +1,23 @@
 # Backend MVP Implementation Checklist
 
-## Overview
+## Overview & Goal
 Transform the static MVP into a dynamic, location-aware civic event discovery platform with AI-generated content, persistent storage, and push notifications.
 
 ## Phase 1: Core Backend Infrastructure
 
-### 1. Local Storage Persistence
-- [ ] Install and configure AsyncStorage for saved events persistence
-- [ ] Update EventsContext to load/save events from AsyncStorage on app start
-- [ ] Add loading states while hydrating saved events from storage
-- [ ] Implement data migration for future app updates
+### 1. Local Storage Persistence ✅
+- [x] Install and configure AsyncStorage for saved events persistence
+- [x] Update EventsContext to load/save events from AsyncStorage on app start
+- [x] Add loading states while hydrating saved events from storage
+- [x] Implement data migration for future app updates
 
-### 2. Location Services
-- [ ] Install expo-location package
-- [ ] Add location permissions to app.json
-- [ ] Implement GPS-based location detection on app launch
-- [ ] Create location search functionality for the expandable button
-- [ ] Add location preference storage and retrieval
-- [ ] Handle location permission denials gracefully
+### 2. Location Services ✅
+- [x] Install expo-location package
+- [x] Add location permissions to app.json
+- [x] Implement GPS-based location detection on app launch
+- [x] Create location search functionality for the expandable button
+- [x] Add location preference storage and retrieval
+- [x] Handle location permission denials gracefully
 
 ### 3. Perplexity AI Integration
 - [ ] Create API service for Perplexity chat completions
@@ -44,7 +44,7 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
 - [ ] Create notification tap handling to navigate to events
 - [ ] Add notification management (cancel, update) for removed events
 
-## Phase 3: When we have more users and need to store data in a database
+## Phase 3: Scaling for more users
 
 ### 6. Supabase Setup
 - [ ] Initialize Supabase project and configure connection
@@ -57,8 +57,8 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
 ## Dependencies & Environment Setup
 
 ### Required Packages
-- [ ] `@react-native-async-storage/async-storage`
-- [ ] `expo-location`
+- [x] `@react-native-async-storage/async-storage`
+- [x] `expo-location`
 - [ ] `expo-notifications`
 - [ ] `@supabase/supabase-js`
 - [ ] Any additional utility packages for API handling
@@ -78,8 +78,8 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
 ## Success Metrics
 
 ### Functional Requirements
-- [ ] Users can save events that persist across app restarts
-- [ ] Location detection works and filters events appropriately
+- [x] Users can save events that persist across app restarts
+- [x] Location detection works and filters events appropriately
 - [ ] AI generates relevant civic events with accurate details
 - [ ] Images load reliably and are contextually appropriate
 - [ ] Push notifications work for saved events

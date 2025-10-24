@@ -1,8 +1,9 @@
 import HomeEventCard from '@/components/home-event-card/HomeEventCard';
 import { Text, View } from '@/components/Themed';
+import { useLocation } from '@/contexts/location-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Keyboard, StatusBar, StyleSheet, TextInput, TouchableOpacity, TouchableWithoutFeedback, VirtualizedList } from 'react-native';
+import { ActivityIndicator, Image, Keyboard, StatusBar, StyleSheet, TextInput, TouchableOpacity, TouchableWithoutFeedback, VirtualizedList } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
@@ -53,9 +54,17 @@ const RefreshIcon = () => (
   </Svg>
 );
 
+const MyLocationIcon = () => (
+  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" fill="white" fillOpacity={0.7} />
+  </Svg>
+);
+
 export default function HomeScreen() {
+  const location = useLocation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const expansion = useSharedValue(0);
   const [flippedIndex, setFlippedIndex] = useState<number | null>(null);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
@@ -69,6 +78,7 @@ export default function HomeScreen() {
     location: string;
     date: string;
     image: any;
+    imageKey: string;
   }> = [
     {
       id: '1',
@@ -76,6 +86,7 @@ export default function HomeScreen() {
       location: 'Phoenix, Arizona',
       date: 'Dec 12, 2024 • 7:30 PM',
       image: require('@/assets/images/event1.png'),
+      imageKey: 'event1',
     },
     {
       id: '2',
@@ -83,6 +94,7 @@ export default function HomeScreen() {
       location: 'Austin, Texas',
       date: 'Jan 08, 2025 • 6:00 PM',
       image: require('@/assets/images/event2.png'),
+      imageKey: 'event2',
     },
     {
       id: '3',
@@ -90,6 +102,7 @@ export default function HomeScreen() {
       location: 'Seattle, Washington',
       date: 'Feb 02, 2025 • 5:30 PM',
       image: require('@/assets/images/event3.png'),
+      imageKey: 'event3',
     },
   ];
 
@@ -102,7 +115,25 @@ export default function HomeScreen() {
     return mid - (mid % EVENTS_LENGTH); // align to first item
   }, [EVENTS_LENGTH]);
 
-  // Virtualized infinite mapping via modulo over EVENTS
+  // Request location on first launch if not asked before
+  useEffect(() => {
+    if (!location.isLoading && !location.permissionAsked && !location.currentLocation) {
+      location.requestLocation();
+    }
+  }, [location.isLoading, location.permissionAsked, location.currentLocation]);
+
+  // Initialize searchText from currentLocation
+  useEffect(() => {
+    if (location.currentLocation && !searchText) {
+      setSearchText(location.currentLocation);
+    }
+  }, [location.currentLocation]);
+
+  // Clear dismissed cards when location changes
+  useEffect(() => {
+    setDismissedIds(new Set());
+    setFlippedIndex(null);
+  }, [location.currentLocation]);
 
   // Animate expansion when isExpanded changes
   useEffect(() => {
@@ -157,12 +188,42 @@ export default function HomeScreen() {
 
   const handlePress = () => {
     if (!isExpanded) {
+      // Populate with current location when opening
+      if (location.currentLocation) {
+        setSearchText(location.currentLocation);
+      }
       setIsExpanded(true);
     }
   };
 
   const handleBlur = () => {
+    // Save location when closing search
+    const trimmedText = searchText.trim();
+    if (trimmedText && trimmedText !== location.currentLocation) {
+      location.setManualLocation(trimmedText);
+    } else if (!trimmedText && location.currentLocation) {
+      // Restore current location if user cleared the text
+      setSearchText(location.currentLocation);
+    }
     setIsExpanded(false);
+  };
+
+  const handleSubmit = () => {
+    const trimmedText = searchText.trim();
+    if (trimmedText) {
+      location.setManualLocation(trimmedText);
+    }
+    setIsExpanded(false);
+    Keyboard.dismiss();
+  };
+
+  const handleUseCurrentLocation = async () => {
+    setIsRequestingLocation(true);
+    await location.requestLocation();
+    setIsRequestingLocation(false);
+    if (location.currentLocation) {
+      setSearchText(location.currentLocation);
+    }
   };
 
   const handleOutsidePress = () => {
@@ -211,18 +272,31 @@ export default function HomeScreen() {
                 </Svg>
                 <TextInput
                   style={styles.textInput}
-                  placeholder="District/County"
+                  placeholder="City, State"
                   placeholderTextColor="rgba(255, 255, 255, 0.38)"
                   value={searchText}
                   onChangeText={setSearchText}
                   onBlur={handleBlur}
-                  onSubmitEditing={() => setIsExpanded(false)}
+                  onSubmitEditing={handleSubmit}
                   returnKeyType="done"
                   blurOnSubmit={true}
                   autoFocus={true}
                   autoCorrect={false}
                   autoCapitalize="words"
                 />
+                <TouchableOpacity
+                  onPress={handleUseCurrentLocation}
+                  disabled={isRequestingLocation}
+                  style={styles.myLocationButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Use current location"
+                >
+                  {isRequestingLocation ? (
+                    <ActivityIndicator size="small" color="rgba(255, 255, 255, 0.7)" />
+                  ) : (
+                    <MyLocationIcon />
+                  )}
+                </TouchableOpacity>
               </Animated.View>
             )}
           </Animated.View>
@@ -232,7 +306,23 @@ export default function HomeScreen() {
       {/* Main Content - Vertically paged list of event cards */}
       <TouchableWithoutFeedback onPress={handleOutsidePress}>
         <View style={{ flex: 1 }} onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}>
-          {viewportHeight > 0 && EVENTS_LENGTH > 0 && (
+          {/* Show fallback when no location is set */}
+          {viewportHeight > 0 && !location.currentLocation && !location.isLoading && (
+            <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, textAlign: 'center', lineHeight: 24 }}>
+                Please enter a location to view local political events!
+              </Text>
+            </View>
+          )}
+          {/* Show loading indicator */}
+          {viewportHeight > 0 && location.isLoading && (
+            <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="rgba(255, 255, 255, 0.7)" />
+              <Text style={{ color: 'rgba(255,255,255,0.5)', marginTop: 16 }}>Getting your location...</Text>
+            </View>
+          )}
+          {/* Show events when location is set */}
+          {viewportHeight > 0 && location.currentLocation && EVENTS_LENGTH > 0 && (
           <VirtualizedList
             data={VISIBLE_EVENTS}
             getItemCount={() => INFINITE_COUNT}
@@ -267,6 +357,7 @@ export default function HomeScreen() {
                     location={item.location}
                     date={item.date}
                     image={item.image}
+                    imageKey={item.imageKey}
                     flipped={flippedIndex === index}
                     onFlip={() => setFlippedIndex(index)}
                     onUnflip={() => setFlippedIndex(null)}
@@ -277,7 +368,8 @@ export default function HomeScreen() {
             )}
           />
         )}
-        {viewportHeight > 0 && EVENTS_LENGTH === 0 && (
+        {/* Show "no more events" when location is set but all events dismissed */}
+        {viewportHeight > 0 && location.currentLocation && EVENTS_LENGTH === 0 && (
           <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
             <Text style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>No more events</Text>
             <TouchableOpacity
@@ -349,6 +441,13 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     textAlignVertical: 'center',
     includeFontPadding: false,
+  },
+  myLocationButton: {
+    flexShrink: 0,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   locationIcon: {
     width: 34,

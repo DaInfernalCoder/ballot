@@ -47,6 +47,7 @@ export function HomeEventCard({
   location,
   date,
   image,
+  imageKey,
   flipped,
   onFlip,
   onUnflip,
@@ -58,7 +59,7 @@ export function HomeEventCard({
   return (
     <SwipeActionCard
       onSwipeRight={() => {
-        addSavedEvent({ id, title, location, date, image });
+        addSavedEvent({ id, title, location, date, image, imageKey });
         onDismiss(id);
       }}
       onSwipeLeft={() => onDismiss(id)}

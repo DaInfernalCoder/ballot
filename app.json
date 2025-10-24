@@ -15,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ballot.app"
+      "bundleIdentifier": "com.ballot.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Ballot uses your location to show you relevant local political events and civic activities in your area."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +27,11 @@
       },
       "package": "com.ballot.app",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
