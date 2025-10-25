@@ -1,5 +1,6 @@
 import HomeEventCard from '@/components/home-event-card/HomeEventCard';
 import { Text, View } from '@/components/Themed';
+import { useDiscoveryEvents } from '@/contexts/discovery-events-context';
 import { useLocation } from '@/contexts/location-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useEffect, useMemo, useState } from 'react';
@@ -62,6 +63,7 @@ const MyLocationIcon = () => (
 
 export default function HomeScreen() {
   const location = useLocation();
+  const discoveryEvents = useDiscoveryEvents();
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [isRequestingLocation, setIsRequestingLocation] = useState(false);
@@ -72,41 +74,9 @@ export default function HomeScreen() {
   const [containerHeight, setContainerHeight] = useState(0);
   const viewportHeight = Math.max(0, containerHeight - tabBarHeight);
 
-  const EVENTS: Array<{
-    id: string;
-    title: string;
-    location: string;
-    date: string;
-    image: any;
-    imageKey: string;
-  }> = [
-    {
-      id: '1',
-      title: 'Community Meeting - Discuss Development Plans',
-      location: 'Phoenix, Arizona',
-      date: 'Dec 12, 2024 • 7:30 PM',
-      image: require('@/assets/images/event1.png'),
-      imageKey: 'event1',
-    },
-    {
-      id: '2',
-      title: 'Town Hall - Education Reform Debate',
-      location: 'Austin, Texas',
-      date: 'Jan 08, 2025 • 6:00 PM',
-      image: require('@/assets/images/event2.png'),
-      imageKey: 'event2',
-    },
-    {
-      id: '3',
-      title: 'Policy Forum - Climate Action Strategy',
-      location: 'Seattle, Washington',
-      date: 'Feb 02, 2025 • 5:30 PM',
-      image: require('@/assets/images/event3.png'),
-      imageKey: 'event3',
-    },
-  ];
-
-  const VISIBLE_EVENTS = useMemo(() => EVENTS.filter(e => !dismissedIds.has(e.id)), [dismissedIds]);
+  // Use discovered events from context
+  const EVENTS = discoveryEvents.discoveredEvents;
+  const VISIBLE_EVENTS = useMemo(() => EVENTS.filter(e => !dismissedIds.has(e.id)), [EVENTS, dismissedIds]);
   const EVENTS_LENGTH = VISIBLE_EVENTS.length;
   const INFINITE_COUNT = 100000;
   const INITIAL_INDEX = useMemo(() => {
@@ -128,6 +98,13 @@ export default function HomeScreen() {
       setSearchText(location.currentLocation);
     }
   }, [location.currentLocation]);
+
+  // Fetch events when location changes
+  useEffect(() => {
+    if (location.currentLocation && !location.isLoading) {
+      discoveryEvents.fetchEvents(location.currentLocation);
+    }
+  }, [location.currentLocation, location.isLoading]);
 
   // Clear dismissed cards when location changes
   useEffect(() => {
@@ -208,10 +185,12 @@ export default function HomeScreen() {
     setIsExpanded(false);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const trimmedText = searchText.trim();
     if (trimmedText) {
       location.setManualLocation(trimmedText);
+      // Force refresh to fetch new events with updated prompt
+      await discoveryEvents.refreshEvents(trimmedText);
     }
     setIsExpanded(false);
     Keyboard.dismiss();
@@ -223,6 +202,8 @@ export default function HomeScreen() {
     setIsRequestingLocation(false);
     if (location.currentLocation) {
       setSearchText(location.currentLocation);
+      // Force refresh to fetch new events for GPS location
+      await discoveryEvents.refreshEvents(location.currentLocation);
     }
   };
 
@@ -233,9 +214,12 @@ export default function HomeScreen() {
     }
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setDismissedIds(new Set());
     setFlippedIndex(null);
+    if (location.currentLocation) {
+      await discoveryEvents.refreshEvents(location.currentLocation);
+    }
   };
 
   return (
@@ -314,11 +298,18 @@ export default function HomeScreen() {
               </Text>
             </View>
           )}
-          {/* Show loading indicator */}
+          {/* Show loading indicator for location */}
           {viewportHeight > 0 && location.isLoading && (
             <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
               <ActivityIndicator size="large" color="rgba(255, 255, 255, 0.7)" />
               <Text style={{ color: 'rgba(255,255,255,0.5)', marginTop: 16 }}>Getting your location...</Text>
+            </View>
+          )}
+          {/* Show loading indicator for events */}
+          {viewportHeight > 0 && !location.isLoading && location.currentLocation && discoveryEvents.isLoading && (
+            <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
+              <ActivityIndicator size="large" color="rgba(255, 255, 255, 0.7)" />
+              <Text style={{ color: 'rgba(255,255,255,0.5)', marginTop: 16 }}>Researching local events, hang tight!</Text>
             </View>
           )}
           {/* Show events when location is set */}

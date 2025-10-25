@@ -1,5 +1,6 @@
 import { EventsProvider } from '@/contexts/events-context';
 import { LocationProvider } from '@/contexts/location-context';
+import { DiscoveryEventsProvider } from '@/contexts/discovery-events-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
@@ -71,12 +72,14 @@ function RootLayoutNav() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <EventsProvider>
         <LocationProvider>
-          <ThemeProvider value={customDarkTheme}>
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-            </Stack>
-          </ThemeProvider>
+          <DiscoveryEventsProvider>
+            <ThemeProvider value={customDarkTheme}>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+              </Stack>
+            </ThemeProvider>
+          </DiscoveryEventsProvider>
         </LocationProvider>
       </EventsProvider>
     </GestureHandlerRootView>

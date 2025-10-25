@@ -18,6 +18,9 @@ export interface SerializedEvent {
   location: string;
   date: string;
   imageKey: string; // e.g., "event1", "event2"
+  address?: string;
+  time?: string;
+  aiOverview?: string;
 }
 
 export interface StorageData {

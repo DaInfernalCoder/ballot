@@ -1,16 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
-import { ImageSourcePropType } from 'react-native';
 import { getImageFromKey, getKeyFromImage } from '@/utils/image-mapping';
 import { loadSavedEvents, saveSavedEvents, SerializedEvent } from '@/utils/storage';
-
-export interface SavedEvent {
-  id: string;
-  title: string;
-  location: string;
-  date: string;
-  image: ImageSourcePropType;
-  imageKey: string; // For serialization
-}
+import { SavedEvent } from '@/types/event';
 
 interface EventsState {
   savedEvents: SavedEvent[];
@@ -72,6 +63,9 @@ function serializeEvent(event: SavedEvent): SerializedEvent {
     location: event.location,
     date: event.date,
     imageKey: event.imageKey,
+    address: event.address,
+    time: event.time,
+    aiOverview: event.aiOverview,
   };
 }
 
