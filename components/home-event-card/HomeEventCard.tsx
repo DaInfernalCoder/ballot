@@ -3,8 +3,9 @@ import SwipeActionCard from '@/components/SwipeActionCard';
 import { Text, View } from '@/components/Themed';
 import { useEvents } from '@/contexts/events-context';
 import { SavedEvent } from '@/types/event';
+import { Image } from 'expo-image';
 import React from 'react';
-import { Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 interface HomeEventCardProps extends SavedEvent {
@@ -69,7 +70,13 @@ export function HomeEventCard({
       flipped={flipped}
       front={
           <>
-            <Image source={image} style={styles.eventImage} resizeMode="cover" />
+            <Image
+              source={image}
+              style={styles.eventImage}
+              contentFit="cover"
+              transition={100}
+              allowDownscaling
+            />
             <View style={styles.eventContent}>
               <Text style={styles.eventTitle}>{title}</Text>
               <View style={styles.eventDetails}>

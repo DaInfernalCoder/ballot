@@ -1,8 +1,9 @@
+import { DiscoveryEventsProvider } from '@/contexts/discovery-events-context';
 import { EventsProvider } from '@/contexts/events-context';
 import { LocationProvider } from '@/contexts/location-context';
-import { DiscoveryEventsProvider } from '@/contexts/discovery-events-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
+import { Asset } from 'expo-asset';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -31,6 +32,7 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
   const [showCustomSplash, setShowCustomSplash] = useState(true);
+  const [assetsReady, setAssetsReady] = useState(false);
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -38,12 +40,34 @@ export default function RootLayout() {
   }, [error]);
 
   useEffect(() => {
-    if (loaded) {
+    async function preloadImages() {
+      try {
+        const modules = [
+          require('../assets/images/event1.png'),
+          require('../assets/images/event2.png'),
+          require('../assets/images/event3.png'),
+          require('../assets/images/event4.png'),
+          require('../assets/images/event5.png'),
+          require('../assets/images/event-image.png'),
+          require('../assets/images/ballot-logo-258118.png'),
+        ];
+        await Promise.all(modules.map((m) => Asset.fromModule(m).downloadAsync()));
+      } catch (e) {
+        // best-effort; continue even if asset caching fails
+      } finally {
+        setAssetsReady(true);
+      }
+    }
+    preloadImages();
+  }, []);
+
+  useEffect(() => {
+    if (loaded && assetsReady) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [loaded, assetsReady]);
 
-  if (!loaded) {
+  if (!loaded || !assetsReady) {
     return null;
   }
 

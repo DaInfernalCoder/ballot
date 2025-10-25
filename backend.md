@@ -41,48 +41,20 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
   - **Implementation**: 3 retry attempts with exponential backoff (1s, 2s, 4s), respects Retry-After header
 - [x] Trigger generation on location change or manual refresh
   - **Implementation**: DiscoveryEventsContext with `fetchEvents()` and `refreshEvents()` methods
+- The API search doesn't really work every time, logs an error with the API fetch. Figure out why these are happening 
+- Should remove the fallback test cards and instead just show the search failed, with a retry button
+- Should have visual indicators of which card you're at and how many are left
+- Something that's engaging to see when AI response is loading 
 
 #### 3.2 View Details Generation (Sonar Pro)
 - [ ] This will use Perplexity Sonar Pro to creat the back of the cards when view details is clicked
 - [ ] Implement &quot;View Details&quot; backend that triggers on card flip
 - [ ] Generate back-of-card data structure:
-  - [ ] Top section: Venue name, full address (with map link), organizer, website link/RSVP button
-  - [ ] Middle section: &quot;Impact of This Event&quot; paragraph, three pre-generated Q&A pairs (Who is this for?, Why does it matter?, What should I expect?) under that
-  - [ ] Bottom section: Interactive Q&A in the next section
+  - [ ] Top section: Venue name, full address (with map link), organizer, website link
+  - [ ] Bottom section: &quot;Impact of This Event&quot; paragraph, three pre-generated Q&A pairs (Who is this for?, Why does it matter?, What should I expect?) under that
 - [ ] Add loading animation trigger point before API call
 - [ ] Add AI text generation animation trigger point after API response
 - [ ] Cache detailed view data per event to avoid regenerating
-
-#### 3.3 Interactive Q&A Feature (Sonar Pro)
-- [ ] Implement user question submission endpoint, this will be inside the view details section of the card, under everything else
-- [ ] Design prompt structure: event context + user question → factual 1-3 sentence answer
-- [ ] Include event data in prompt: title, date, time, venue, organizer, AI overview, source URLs
-- [ ] Handle question submission with same loading/generation animations
-- [ ] Display answer in collapsible Q&A format with source citation
-- example prompt for this: When user types a question, send:
-
-You are an assistant for Ballot. Use the provided event data and real web context to answer user questions factually and briefly.
-
-EVENT CONTEXT:
-{event_title}
-Date: {date}, Time: {time}
-Venue: {venue}
-Organizer: {organizer}
-Description: {ai_overview}
-Links: {source_urls}
-
-USER QUESTION:
-{user_input}
-
-Return 1-3 sentence factual answer.
-- [ ] Replace previous user-submitted Q&A on new question (only show one at a time)
-- [ ] Add error handling for invalid questions or API failures
-
-#### 3.4 Prompt Engineering
-- [ ] Define Sonar Reasoning Pro prompt for card generation (location-based civic event discovery)
-- [ ] Define Sonar Pro prompt for detailed view generation (structured event information)
-- [ ] Define Sonar Pro prompt template for user questions (factual event Q&A with context)
-- [ ] Document prompt templates in codebase for easy iteration
 
 ### 4. Image Integration
 - [ ] Set up Unsplash API integration for event images
@@ -116,7 +88,7 @@ Return 1-3 sentence factual answer.
 ### Required Packages
 - [x] `@react-native-async-storage/async-storage`
 - [x] `expo-location`
-- [ ] `expo-notifications`
+- [] `expo-notifications`
 - [ ] `@supabase/supabase-js`
 - [ ] Any additional utility packages for API handling
 

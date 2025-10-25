@@ -8,8 +8,9 @@ import { useEvents } from '@/contexts/events-context';
 import { useLocation } from '@/contexts/location-context';
 import { loadViewMode, saveViewMode, ViewMode } from '@/utils/view-mode-storage';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { Image } from 'expo-image';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Keyboard, StatusBar, StyleSheet, TextInput, TouchableOpacity, TouchableWithoutFeedback, VirtualizedList } from 'react-native';
+import { ActivityIndicator, Keyboard, StatusBar, StyleSheet, TextInput, TouchableOpacity, TouchableWithoutFeedback, VirtualizedList } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
@@ -276,7 +277,8 @@ export default function HomeScreen() {
         <Image
           source={require('@/assets/images/ballot-logo-258118.png')}
           style={styles.logo}
-          resizeMode="contain"
+          contentFit="contain"
+          transition={100}
         />
         <View style={styles.headerButtons}>
           <TouchableOpacity
