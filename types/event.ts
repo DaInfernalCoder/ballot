@@ -19,6 +19,10 @@ export interface DiscoveredEvent extends BaseEvent {
   address?: string; // Full street address
   time?: string; // Separate time field (e.g., "7:30 PM")
   aiOverview?: string; // AI-generated summary
+  link?: string; // External link to event details
+  sourceUrls?: string[]; // Source URLs from Perplexity
+  tags?: string[]; // Event tags/categories
+  venue?: string; // Venue name
 }
 
 /**
@@ -28,6 +32,10 @@ export interface SavedEvent extends BaseEvent {
   address?: string;
   time?: string;
   aiOverview?: string;
+  link?: string;
+  sourceUrls?: string[];
+  tags?: string[];
+  venue?: string;
 }
 
 /**

@@ -1,7 +1,8 @@
 import FlippableCard from '@/components/FlippableCard';
 import SwipeActionCard from '@/components/SwipeActionCard';
 import { Text, View } from '@/components/Themed';
-import { SavedEvent, useEvents } from '@/contexts/events-context';
+import { useEvents } from '@/contexts/events-context';
+import { SavedEvent } from '@/types/event';
 import React from 'react';
 import { Image, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -12,6 +13,7 @@ interface HomeEventCardProps extends SavedEvent {
   onUnflip: () => void;
   onDismiss: (id: string) => void;
   style?: any;
+  deckMode?: boolean;
 }
 
 const LocationIcon = () => (
@@ -53,21 +55,19 @@ export function HomeEventCard({
   onUnflip,
   onDismiss,
   style,
+  deckMode = false,
 }: HomeEventCardProps) {
   const { addSavedEvent } = useEvents();
 
-  return (
-    <SwipeActionCard
-      onSwipeRight={() => {
-        addSavedEvent({ id, title, location, date, image, imageKey });
-        onDismiss(id);
-      }}
-      onSwipeLeft={() => onDismiss(id)}
-    >
-      <FlippableCard
-        style={[styles.eventCard, style]}
-        flipped={flipped}
-        front={
+  const cardContent = (
+    <FlippableCard
+      style={[
+        styles.eventCard,
+        deckMode && styles.eventCardDeck,
+        style,
+      ]}
+      flipped={flipped}
+      front={
           <>
             <Image source={image} style={styles.eventImage} resizeMode="cover" />
             <View style={styles.eventContent}>
@@ -114,6 +114,23 @@ export function HomeEventCard({
           </View>
         }
       />
+  );
+
+  // In deck mode, gestures are handled by CardDeckGestureHandler
+  if (deckMode) {
+    return cardContent;
+  }
+
+  // In list mode, use SwipeActionCard for horizontal swipe gestures
+  return (
+    <SwipeActionCard
+      onSwipeRight={() => {
+        addSavedEvent({ id, title, location, date, image, imageKey });
+        onDismiss(id);
+      }}
+      onSwipeLeft={() => onDismiss(id)}
+    >
+      {cardContent}
     </SwipeActionCard>
   );
 }
@@ -127,6 +144,18 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginTop: 25,
     zIndex: 2,
+  },
+  eventCardDeck: {
+    borderRadius: 45,
+    marginTop: 0,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.44,
+    shadowRadius: 10.32,
+    elevation: 16,
   },
   eventImage: {
     width: '100%',

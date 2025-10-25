@@ -144,9 +144,12 @@ GestureHandlerRootView
                   └─ Stack Navigator
 ```
 
-### Quizlet-Style Infinite Card Swiping
+### Dual View Modes: List and Deck
 
-Home screen uses `VirtualizedList` with virtual infinite scrolling:
+The home screen supports two viewing modes with persistent preference storage:
+
+#### List View (Default)
+Quizlet-style infinite card swiping using `VirtualizedList`:
 
 ```typescript
 // Pattern in app/(tabs)/index.tsx
@@ -158,10 +161,89 @@ INITIAL_INDEX = (INFINITE_COUNT/2) - (INFINITE_COUNT/2) % EVENTS_LENGTH
 - Full-screen vertical paging (one card at a time)
 - Modulo mapping creates infinite scroll illusion
 - Dismissed cards filtered out dynamically
-- Refresh button resets dismissed state
+- Horizontal swipe gestures: right = save, left = dismiss
 - `windowSize=3` for performance (only 3 cards rendered)
 
 **Why this pattern**: Simulates Tinder/Quizlet UX without re-rendering entire list
+
+#### Deck View (BigUIPaging-Inspired)
+Horizontal card deck with stacked cards:
+
+**File**: `components/CardDeckView.tsx`
+
+- Front card at full size, 2-3 cards behind scaled to 0.9x
+- Z-index layering for depth effect (front card has highest z-index)
+- Progress indicator dots at bottom
+- Horizontal swipe gestures: left/right = navigate between cards
+- Vertical swipe gestures: up = save event, down = dismiss event
+- Spring physics for smooth card transitions (damping: 20, stiffness: 150)
+- Only renders 3 cards at a time (current + 2 behind) for performance
+
+**Gesture System** (`components/CardDeckGestureHandler.tsx`):
+- Multi-directional gesture detection with direction locking
+- Detects dominant direction in first 50px of movement
+- Locks to that axis for remainder of gesture
+- Horizontal threshold: 30% of screen width to commit navigation
+- Vertical threshold: 100px to commit save/dismiss
+- Uses `useSharedValue` for UI thread animations
+
+**View Toggle**:
+- Toggle button in header (next to location pin)
+- Preference persisted to AsyncStorage at `@ballot:view_mode`
+- Loads saved preference on app launch
+- Utility functions in `utils/view-mode-storage.ts`
+
+**Component Hierarchy for Deck Mode**:
+```
+CardDeckView
+  └─ CardStackLayer (for each visible card)
+      └─ CardDeckGestureHandler (only for front card)
+          └─ AnimatedEventCard
+              └─ HomeEventCard (with deckMode={true})
+                  └─ FlippableCard (no SwipeActionCard wrapper in deck mode)
+```
+
+**Key Differences from List Mode**:
+- List mode: `SwipeActionCard` wraps `FlippableCard` for horizontal swipes
+- Deck mode: `CardDeckGestureHandler` wraps entire card for multi-directional gestures
+- List mode: Vertical paging with infinite scroll
+- Deck mode: Horizontal navigation with stacked cards
+- List mode: Swipe right = save, left = dismiss
+- Deck mode: Swipe up = save, down = dismiss, left/right = navigate
+
+### AI Thinking Animation System
+
+The app features a comprehensive AI thinking animation system that makes the search process engaging and informative:
+
+#### 1. Streaming Text Component (`components/StreamingText.tsx`)
+- Character-by-character text animation similar to ChatGPT
+- Blinking cursor during typing
+- Configurable speed, styling, and completion callbacks
+- Used for "Found X exciting events in [location]!" messages
+
+#### 2. Thinking Dots Animation (`components/ThinkingDots.tsx`)
+- Animated dots that bounce and scale with staggered timing
+- Used during AI processing to show active thinking
+- Customizable size, color, spacing, and speed
+
+#### 3. AI Parameters Display (`components/AIThinkingParameters.tsx`)
+- Shows AI model information (Perplexity Sonar Pro)
+- Displays temperature settings with descriptive labels (Precise/Balanced/Creative)
+- Shows token limits and current processing location
+- Includes brain icon with thinking dots animation
+
+#### 4. Animated Event Card Entrance (`components/AnimatedEventCard.tsx`)
+- Staggered entrance animations for event cards after AI generation
+- Cards slide up, scale in, and fade in with spring physics
+- 200ms delay between each card for natural progression
+
+#### Animation Flow Sequence
+1. **Search Triggered**: Basic location input with smooth expansion animation
+2. **AI Thinking**: `AIThinkingParameters` component shows brain icon, thinking dots, model info, and location
+3. **Results Found**: `StreamingText` component displays "Found X exciting events in [location]!" with character-by-character animation
+4. **Cards Appear**: `AnimatedEventCard` components entrance with staggered spring animations (translateY + scale + opacity)
+
+**Why this animation system**: Creates engaging, ChatGPT-like experience that communicates AI processing while maintaining visual interest and providing transparency about what's happening.
 
 ### SVG Icon System
 
