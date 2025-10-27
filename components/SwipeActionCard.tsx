@@ -108,8 +108,8 @@ export function SwipeActionCard({ children, onSwipeRight, onSwipeLeft }: SwipeAc
         <Animated.View
           style={[styles.card, cardStyle]}
           needsOffscreenAlphaCompositing={false}
-          shouldRasterizeIOS={false}
-          renderToHardwareTextureAndroid={false}
+          shouldRasterizeIOS={true}
+          renderToHardwareTextureAndroid={true}
         >
           {children}
         </Animated.View>
