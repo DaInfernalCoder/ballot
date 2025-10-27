@@ -42,7 +42,7 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
 - [x] Trigger generation on location change or manual refresh
   - **Implementation**: DiscoveryEventsContext with `fetchEvents()` and `refreshEvents()` methods
 - The API search doesn't really work every time, logs an error with the API fetch. Figure out why these are happening 
-- Should remove the fallback test cards and instead just show the search failed, with a retry button
+- [x] Should remove the fallback test cards and instead just show the search failed, with a retry button
 - Should have visual indicators of which card you're at and how many are left
 - Something that's engaging to see when AI response is loading 
 

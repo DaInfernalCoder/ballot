@@ -1,6 +1,6 @@
 import { DiscoveredEvent } from '@/types/event';
 import { cacheEvents, clearCacheForLocation, formatCacheAge, loadCachedEvents } from '@/utils/event-cache';
-import { generateEventsForLocation, getFallbackEvents } from '@/utils/event-generation';
+import { generateEventsForLocation } from '@/utils/event-generation';
 import { OpenRouterError } from '@/utils/perplexity-api';
 import React, { createContext, useCallback, useContext, useMemo, useReducer } from 'react';
 
@@ -18,8 +18,7 @@ type DiscoveryEventsAction =
   | { type: 'FETCH_START'; payload: { location: string } }
   | { type: 'FETCH_SUCCESS'; payload: { events: DiscoveredEvent[]; cacheHit: boolean; cacheAge?: number } }
   | { type: 'FETCH_ERROR'; payload: string }
-  | { type: 'CLEAR_EVENTS' }
-  | { type: 'SET_FALLBACK_EVENTS' };
+  | { type: 'CLEAR_EVENTS' };
 
 interface DiscoveryEventsContextValue extends DiscoveryEventsState {
   fetchEvents: (location: string, forceRefresh?: boolean) => Promise<void>;
@@ -67,14 +66,6 @@ function discoveryEventsReducer(
         cacheHit: false,
         cacheAge: null,
         currentLocation: null,
-      };
-    case 'SET_FALLBACK_EVENTS':
-      return {
-        ...state,
-        discoveredEvents: getFallbackEvents(),
-        isLoading: false,
-        error: 'Using fallback events',
-        cacheHit: false,
       };
     default:
       return state;
@@ -136,13 +127,7 @@ export function DiscoveryEventsProvider({ children }: { children: React.ReactNod
       console.log('[DiscoveryEvents] Generating new events...');
       const events = await generateEventsForLocation(normalizedLocation);
 
-      if (events.length === 0) {
-        console.warn('[DiscoveryEvents] No events generated, using fallback');
-        dispatch({ type: 'SET_FALLBACK_EVENTS' });
-        return;
-      }
-
-      // Cache the results
+      // Cache the results (even if empty)
       await cacheEvents(normalizedLocation, events);
 
       dispatch({
@@ -165,9 +150,6 @@ export function DiscoveryEventsProvider({ children }: { children: React.ReactNod
       }
 
       dispatch({ type: 'FETCH_ERROR', payload: errorMessage });
-
-      // Use fallback events on error
-      dispatch({ type: 'SET_FALLBACK_EVENTS' });
     }
   }, [state.isLoading, state.currentLocation]);
 

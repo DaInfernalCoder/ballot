@@ -380,6 +380,22 @@ export default function HomeScreen() {
               />
             </View>
           )}
+          {/* Show "no events found" when API returns empty results */}
+          {viewportHeight > 0 && !location.isLoading && location.currentLocation && !discoveryEvents.isLoading && discoveryEvents.discoveredEvents.length === 0 && (
+            <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, textAlign: 'center', marginBottom: 16 }}>
+                Oops! No nearby events found!
+              </Text>
+              <TouchableOpacity
+                onPress={handleRefresh}
+                style={{ width: 44, height: 44, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' }}
+                accessibilityRole="button"
+                accessibilityLabel="Retry search"
+              >
+                <RefreshIcon />
+              </TouchableOpacity>
+            </View>
+          )}
           {/* Show events when location is set */}
           {viewportHeight > 0 && location.currentLocation && EVENTS_LENGTH > 0 && !showStreamingText && viewMode === 'list' && (
           <VirtualizedList

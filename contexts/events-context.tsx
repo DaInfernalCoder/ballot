@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
-import { getImageFromKey, getKeyFromImage } from '@/utils/image-mapping';
-import { loadSavedEvents, saveSavedEvents, SerializedEvent } from '@/utils/storage';
 import { SavedEvent } from '@/types/event';
+import { getImageFromKey } from '@/utils/image-mapping';
+import { loadSavedEvents, saveSavedEvents, SerializedEvent } from '@/utils/storage';
+import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
 
 interface EventsState {
   savedEvents: SavedEvent[];
