@@ -41,7 +41,7 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
   - **Implementation**: 3 retry attempts with exponential backoff (1s, 2s, 4s), respects Retry-After header
 - [x] Trigger generation on location change or manual refresh
   - **Implementation**: DiscoveryEventsContext with `fetchEvents()` and `refreshEvents()` methods
-- [x] The API search doesn't really work every time, logs an error with the API fetch. Figure out why these are happening. The solution was adding a 60 second cooldown between searches.
+- [x] The API search doesn't really work every time, logs an error with the API fetch. Figure out why these are happening. The solution was adding a 60 second cooldown between searches. **UPDATE**: Cooldown removed as requested.
 - [x] Should remove the fallback test cards and instead just show the search failed, with a retry button
 
 #### 3.2 Visual Indicators

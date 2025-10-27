@@ -3,9 +3,6 @@ import { generateEventsForLocation } from '@/utils/event-generation';
 import { OpenRouterError } from '@/utils/perplexity-api';
 import React, { createContext, useCallback, useContext, useMemo, useReducer } from 'react';
 
-// Cooldown period: 120 seconds between searches
-const SEARCH_COOLDOWN_MS = 120000;
-
 interface DiscoveryEventsState {
   discoveredEvents: DiscoveredEvent[];
   isLoading: boolean;
@@ -25,8 +22,6 @@ interface DiscoveryEventsContextValue extends DiscoveryEventsState {
   fetchEvents: (location: string) => Promise<void>;
   refreshEvents: (location: string) => Promise<void>;
   clearEvents: () => void;
-  getRemainingCooldown: () => number;
-  isOnCooldown: () => boolean;
 }
 
 const DiscoveryEventsContext = createContext<DiscoveryEventsContextValue | undefined>(undefined);
@@ -82,39 +77,11 @@ export function DiscoveryEventsProvider({ children }: { children: React.ReactNod
   });
 
   /**
-   * Check if on cooldown
-   */
-  const isOnCooldown = useCallback(() => {
-    if (!state.lastSearchStartTime) return false;
-    const elapsed = Date.now() - state.lastSearchStartTime;
-    return elapsed < SEARCH_COOLDOWN_MS;
-  }, [state.lastSearchStartTime]);
-
-  /**
-   * Get remaining cooldown time in seconds
-   */
-  const getRemainingCooldown = useCallback(() => {
-    if (!state.lastSearchStartTime) return 0;
-    const elapsed = Date.now() - state.lastSearchStartTime;
-    const remaining = Math.max(0, SEARCH_COOLDOWN_MS - elapsed);
-    return Math.ceil(remaining / 1000);
-  }, [state.lastSearchStartTime]);
-
-  /**
    * Fetch events for a location (no caching)
    */
   const fetchEvents = useCallback(async (location: string) => {
     if (!location || !location.trim()) {
       console.log('[DiscoveryEvents] No location provided, skipping fetch');
-      return;
-    }
-
-    // Check cooldown
-    if (isOnCooldown()) {
-      const remainingSeconds = getRemainingCooldown();
-      const errorMessage = `Please wait ${remainingSeconds} seconds before starting another search`;
-      console.log('[DiscoveryEvents] On cooldown:', errorMessage);
-      dispatch({ type: 'FETCH_ERROR', payload: errorMessage });
       return;
     }
 
@@ -145,7 +112,7 @@ export function DiscoveryEventsProvider({ children }: { children: React.ReactNod
 
       dispatch({ type: 'FETCH_ERROR', payload: errorMessage });
     }
-  }, [state.lastSearchStartTime, isOnCooldown, getRemainingCooldown]);
+  }, []);
 
   /**
    * Refresh events
@@ -173,10 +140,8 @@ export function DiscoveryEventsProvider({ children }: { children: React.ReactNod
       fetchEvents,
       refreshEvents,
       clearEvents,
-      getRemainingCooldown,
-      isOnCooldown,
     }),
-    [state, fetchEvents, refreshEvents, clearEvents, getRemainingCooldown, isOnCooldown]
+    [state, fetchEvents, refreshEvents, clearEvents]
   );
 
   return (
