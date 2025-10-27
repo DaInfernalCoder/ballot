@@ -380,8 +380,26 @@ export default function HomeScreen() {
               />
             </View>
           )}
+          {/* Show error message (cooldown or API errors) */}
+          {viewportHeight > 0 && !location.isLoading && location.currentLocation && !discoveryEvents.isLoading && discoveryEvents.error && (
+            <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, textAlign: 'center', marginBottom: 16 }}>
+                {discoveryEvents.error}
+              </Text>
+              {!discoveryEvents.isOnCooldown() && (
+                <TouchableOpacity
+                  onPress={handleRefresh}
+                  style={{ width: 44, height: 44, borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.2)', justifyContent: 'center', alignItems: 'center' }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry search"
+                >
+                  <RefreshIcon />
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
           {/* Show "no events found" when API returns empty results */}
-          {viewportHeight > 0 && !location.isLoading && location.currentLocation && !discoveryEvents.isLoading && discoveryEvents.discoveredEvents.length === 0 && (
+          {viewportHeight > 0 && !location.isLoading && location.currentLocation && !discoveryEvents.isLoading && !discoveryEvents.error && discoveryEvents.discoveredEvents.length === 0 && (
             <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
               <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, textAlign: 'center', marginBottom: 16 }}>
                 Oops! No nearby events found!
@@ -397,7 +415,7 @@ export default function HomeScreen() {
             </View>
           )}
           {/* Show events when location is set */}
-          {viewportHeight > 0 && location.currentLocation && EVENTS_LENGTH > 0 && !showStreamingText && viewMode === 'list' && (
+          {viewportHeight > 0 && location.currentLocation && !discoveryEvents.error && EVENTS_LENGTH > 0 && !showStreamingText && viewMode === 'list' && (
           <VirtualizedList
             data={VISIBLE_EVENTS}
             getItemCount={() => INFINITE_COUNT}
@@ -468,7 +486,7 @@ export default function HomeScreen() {
           />
         )}
         {/* Show "no more events" when location is set but all events dismissed */}
-        {viewportHeight > 0 && location.currentLocation && EVENTS_LENGTH === 0 && (
+        {viewportHeight > 0 && location.currentLocation && !discoveryEvents.error && EVENTS_LENGTH === 0 && discoveryEvents.discoveredEvents.length > 0 && (
           <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
             <Text style={{ color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>No more events</Text>
             <TouchableOpacity

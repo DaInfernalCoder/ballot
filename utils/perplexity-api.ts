@@ -35,7 +35,7 @@ export class APIError extends OpenRouterError {
  * OpenRouter API configuration
  */
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const DEFAULT_TIMEOUT = 30000; // 30 seconds
+const DEFAULT_TIMEOUT = 60000; // 60 seconds
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000; // 1 second
 

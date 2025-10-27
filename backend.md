@@ -41,17 +41,21 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
   - **Implementation**: 3 retry attempts with exponential backoff (1s, 2s, 4s), respects Retry-After header
 - [x] Trigger generation on location change or manual refresh
   - **Implementation**: DiscoveryEventsContext with `fetchEvents()` and `refreshEvents()` methods
-- The API search doesn't really work every time, logs an error with the API fetch. Figure out why these are happening 
+- [x] The API search doesn't really work every time, logs an error with the API fetch. Figure out why these are happening. The solution was adding a 60 second cooldown between searches.
 - [x] Should remove the fallback test cards and instead just show the search failed, with a retry button
-- Should have visual indicators of which card you're at and how many are left
-- Something that's engaging to see when AI response is loading 
 
-#### 3.2 View Details Generation (Sonar Pro)
-- [ ] This will use Perplexity Sonar Pro to creat the back of the cards when view details is clicked
+#### 3.2 Visual Indicators
+- [ ] Should have visual indicators of which card you're at and how many are left
+- [ ] Something that's engaging to see when AI response is loading 
+
+#### 3.3 View Details Generation (Sonar Pro)
+- [ ] This will use Perplexity Sonar Pro to create the back of the cards when view details is clicked
 - [ ] Implement &quot;View Details&quot; backend that triggers on card flip
 - [ ] Generate back-of-card data structure:
   - [ ] Top section: Venue name, full address (with map link), organizer, website link
-  - [ ] Bottom section: &quot;Impact of This Event&quot; paragraph, three pre-generated Q&A pairs (Who is this for?, Why does it matter?, What should I expect?) under that
+  - [ ] Bottom section: &quot;Impact of This Event&quot; paragraph, three pre-generated Q&A pairs (Who is this for?, Why does it matter?, What should I expect?) under that similar to recently asked question in the google ui when viewing search results 
+
+#### 3.4 Loading Animation & Cache
 - [ ] Add loading animation trigger point before API call
 - [ ] Add AI text generation animation trigger point after API response
 - [ ] Cache detailed view data per event to avoid regenerating

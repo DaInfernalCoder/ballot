@@ -1,30 +1,32 @@
 import { DiscoveredEvent } from '@/types/event';
-import { cacheEvents, clearCacheForLocation, formatCacheAge, loadCachedEvents } from '@/utils/event-cache';
 import { generateEventsForLocation } from '@/utils/event-generation';
 import { OpenRouterError } from '@/utils/perplexity-api';
 import React, { createContext, useCallback, useContext, useMemo, useReducer } from 'react';
+
+// Cooldown period: 120 seconds between searches
+const SEARCH_COOLDOWN_MS = 120000;
 
 interface DiscoveryEventsState {
   discoveredEvents: DiscoveredEvent[];
   isLoading: boolean;
   error: string | null;
   lastFetchTime: number | null;
-  cacheHit: boolean;
-  cacheAge: number | null;
+  lastSearchStartTime: number | null;
   currentLocation: string | null;
 }
 
 type DiscoveryEventsAction =
   | { type: 'FETCH_START'; payload: { location: string } }
-  | { type: 'FETCH_SUCCESS'; payload: { events: DiscoveredEvent[]; cacheHit: boolean; cacheAge?: number } }
+  | { type: 'FETCH_SUCCESS'; payload: { events: DiscoveredEvent[] } }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'CLEAR_EVENTS' };
 
 interface DiscoveryEventsContextValue extends DiscoveryEventsState {
-  fetchEvents: (location: string, forceRefresh?: boolean) => Promise<void>;
+  fetchEvents: (location: string) => Promise<void>;
   refreshEvents: (location: string) => Promise<void>;
   clearEvents: () => void;
-  getCacheAgeDisplay: () => string | null;
+  getRemainingCooldown: () => number;
+  isOnCooldown: () => boolean;
 }
 
 const DiscoveryEventsContext = createContext<DiscoveryEventsContextValue | undefined>(undefined);
@@ -40,6 +42,7 @@ function discoveryEventsReducer(
         isLoading: true,
         error: null,
         currentLocation: action.payload.location,
+        lastSearchStartTime: Date.now(),
       };
     case 'FETCH_SUCCESS':
       return {
@@ -48,8 +51,6 @@ function discoveryEventsReducer(
         isLoading: false,
         error: null,
         lastFetchTime: Date.now(),
-        cacheHit: action.payload.cacheHit,
-        cacheAge: action.payload.cacheAge || null,
       };
     case 'FETCH_ERROR':
       return {
@@ -63,8 +64,6 @@ function discoveryEventsReducer(
         discoveredEvents: [],
         error: null,
         lastFetchTime: null,
-        cacheHit: false,
-        cacheAge: null,
         currentLocation: null,
       };
     default:
@@ -78,64 +77,59 @@ export function DiscoveryEventsProvider({ children }: { children: React.ReactNod
     isLoading: false,
     error: null,
     lastFetchTime: null,
-    cacheHit: false,
-    cacheAge: null,
+    lastSearchStartTime: null,
     currentLocation: null,
   });
 
   /**
-   * Fetch events for a location (with caching)
+   * Check if on cooldown
    */
-  const fetchEvents = useCallback(async (location: string, forceRefresh: boolean = false) => {
+  const isOnCooldown = useCallback(() => {
+    if (!state.lastSearchStartTime) return false;
+    const elapsed = Date.now() - state.lastSearchStartTime;
+    return elapsed < SEARCH_COOLDOWN_MS;
+  }, [state.lastSearchStartTime]);
+
+  /**
+   * Get remaining cooldown time in seconds
+   */
+  const getRemainingCooldown = useCallback(() => {
+    if (!state.lastSearchStartTime) return 0;
+    const elapsed = Date.now() - state.lastSearchStartTime;
+    const remaining = Math.max(0, SEARCH_COOLDOWN_MS - elapsed);
+    return Math.ceil(remaining / 1000);
+  }, [state.lastSearchStartTime]);
+
+  /**
+   * Fetch events for a location (no caching)
+   */
+  const fetchEvents = useCallback(async (location: string) => {
     if (!location || !location.trim()) {
       console.log('[DiscoveryEvents] No location provided, skipping fetch');
       return;
     }
 
-    const normalizedLocation = location.trim();
-
-    // Don't re-fetch if already loading the same location
-    if (state.isLoading && state.currentLocation === normalizedLocation && !forceRefresh) {
-      console.log('[DiscoveryEvents] Already loading events for this location');
+    // Check cooldown
+    if (isOnCooldown()) {
+      const remainingSeconds = getRemainingCooldown();
+      const errorMessage = `Please wait ${remainingSeconds} seconds before starting another search`;
+      console.log('[DiscoveryEvents] On cooldown:', errorMessage);
+      dispatch({ type: 'FETCH_ERROR', payload: errorMessage });
       return;
     }
+
+    const normalizedLocation = location.trim();
 
     dispatch({ type: 'FETCH_START', payload: { location: normalizedLocation } });
 
     try {
-      // Try to load from cache first (unless force refresh)
-      if (!forceRefresh) {
-        const cached = await loadCachedEvents(normalizedLocation);
-        if (cached && cached.events.length > 0) {
-          console.log('[DiscoveryEvents] Using cached events');
-          dispatch({
-            type: 'FETCH_SUCCESS',
-            payload: {
-              events: cached.events,
-              cacheHit: true,
-              cacheAge: cached.age,
-            },
-          });
-          return;
-        }
-      } else {
-        console.log('[DiscoveryEvents] Force refresh - clearing cache');
-        await clearCacheForLocation(normalizedLocation);
-      }
-
-      // Generate new events
-      console.log('[DiscoveryEvents] Generating new events...');
+      // Generate events directly from API
+      console.log('[DiscoveryEvents] Fetching events from API...');
       const events = await generateEventsForLocation(normalizedLocation);
-
-      // Cache the results (even if empty)
-      await cacheEvents(normalizedLocation, events);
 
       dispatch({
         type: 'FETCH_SUCCESS',
-        payload: {
-          events,
-          cacheHit: false,
-        },
+        payload: { events },
       });
 
     } catch (error: unknown) {
@@ -151,14 +145,14 @@ export function DiscoveryEventsProvider({ children }: { children: React.ReactNod
 
       dispatch({ type: 'FETCH_ERROR', payload: errorMessage });
     }
-  }, [state.isLoading, state.currentLocation]);
+  }, [state.lastSearchStartTime, isOnCooldown, getRemainingCooldown]);
 
   /**
-   * Refresh events (bypass cache)
+   * Refresh events
    */
   const refreshEvents = useCallback(async (location: string) => {
     console.log('[DiscoveryEvents] Refreshing events...');
-    await fetchEvents(location, true);
+    await fetchEvents(location);
   }, [fetchEvents]);
 
   /**
@@ -168,31 +162,21 @@ export function DiscoveryEventsProvider({ children }: { children: React.ReactNod
     dispatch({ type: 'CLEAR_EVENTS' });
   }, []);
 
-  /**
-   * Get formatted cache age for display
-   */
-  const getCacheAgeDisplay = useCallback((): string | null => {
-    if (!state.cacheHit || !state.cacheAge) {
-      return null;
-    }
-    return formatCacheAge(state.cacheAge);
-  }, [state.cacheHit, state.cacheAge]);
-
   const value = useMemo<DiscoveryEventsContextValue>(
     () => ({
       discoveredEvents: state.discoveredEvents,
       isLoading: state.isLoading,
       error: state.error,
       lastFetchTime: state.lastFetchTime,
-      cacheHit: state.cacheHit,
-      cacheAge: state.cacheAge,
+      lastSearchStartTime: state.lastSearchStartTime,
       currentLocation: state.currentLocation,
       fetchEvents,
       refreshEvents,
       clearEvents,
-      getCacheAgeDisplay,
+      getRemainingCooldown,
+      isOnCooldown,
     }),
-    [state, fetchEvents, refreshEvents, clearEvents, getCacheAgeDisplay]
+    [state, fetchEvents, refreshEvents, clearEvents, getRemainingCooldown, isOnCooldown]
   );
 
   return (
