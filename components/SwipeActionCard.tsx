@@ -2,13 +2,13 @@ import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-    interpolate,
-    runOnJS,
-    useAnimatedStyle,
-    useDerivedValue,
-    useSharedValue,
-    withSpring,
-    withTiming,
+  interpolate,
+  runOnJS,
+  useAnimatedStyle,
+  useDerivedValue,
+  useSharedValue,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -59,7 +59,8 @@ export function SwipeActionCard({ children, onSwipeRight, onSwipeLeft }: SwipeAc
 
   const gesture = Gesture.Pan()
     .activeOffsetX([-16, 16])
-    .activeOffsetY([-20, 20])
+    .failOffsetY([-20, 20])
+    .enableTrackpadTwoFingerGesture(false)
     .onStart(() => {
       startX.value = translateX.value;
     })

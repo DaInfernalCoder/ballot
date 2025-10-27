@@ -49,11 +49,16 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
 - [ ] Something that's engaging to see when AI response is loading 
 
 #### 3.3 View Details Generation (Sonar Pro)
-- [ ] This will use Perplexity Sonar Pro to create the back of the cards when view details is clicked
-- [ ] Implement &quot;View Details&quot; backend that triggers on card flip
-- [ ] Generate back-of-card data structure:
-  - [ ] Top section: Venue name, full address (with map link), organizer, website link
-  - [ ] Bottom section: &quot;Impact of This Event&quot; paragraph, three pre-generated Q&A pairs (Who is this for?, Why does it matter?, What should I expect?) under that similar to recently asked question in the google ui when viewing search results 
+- [x] This will use Perplexity Sonar Pro to create the back of the cards when view details is clicked
+- [x] Implement "View Details" backend that triggers on card flip
+- [x] Generate back-of-card data structure:
+  - [x] Top section: Venue name, full address (with map link), organizer, website link
+  - [x] Bottom section: "Impact of This Event" paragraph, three pre-generated Q&A pairs (Who is this for?, Why does it matter?, What should I expect?) under that similar to recently asked question in the google ui when viewing search results 
+
+#### 3.3.1 Fixing scrolling 
+- [ ]  I'm not able to scroll the card when the text get's longer than the horizontal limits of the card viewport
+- [ ] The scrolling on the front of the card is not working when starting on the middle of the screen. Might not be super user friendly since people don't know where to start scrolling 
+- [ ] The current scrolling mechanism on the back of the card where you start from the close details card might not be super intuitive.
 
 #### 3.4 Loading Animation & Cache
 - [ ] Add loading animation trigger point before API call

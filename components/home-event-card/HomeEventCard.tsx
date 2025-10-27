@@ -5,8 +5,7 @@ import { useEvents } from '@/contexts/events-context';
 import { SavedEvent } from '@/types/event';
 import { Image } from 'expo-image';
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 interface HomeEventCardProps extends SavedEvent {
