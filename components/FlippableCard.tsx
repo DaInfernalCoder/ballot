@@ -73,6 +73,9 @@ export default function FlippableCard({
           ]}
           pointerEvents={flipped ? 'auto' : 'none'}
           ref={backRef}
+          needsOffscreenAlphaCompositing={false}
+          shouldRasterizeIOS={false}
+          renderToHardwareTextureAndroid={false}
         >
           {back}
         </Animated.View>

@@ -144,6 +144,14 @@ GestureHandlerRootView
                   └─ Stack Navigator
 ```
 
+### Card Details View
+
+The back of each card features:
+- **Scrollable content**: Event details (venue, address, organizer, website) and AI-generated impact statement
+- **Fixed bottom button**: "Close Details" button styled identically to "View Details" on front
+- **Nested scroll behavior**: When scrolled to top/bottom edges, vertical swipes pass through to parent VirtualizedList for card navigation
+- **Gesture coordination**: Horizontal swipes (add/delete) work independently of vertical scrolling
+
 ### List View
 
 The home screen uses a Quizlet-style infinite card swiping interface built with `VirtualizedList`:

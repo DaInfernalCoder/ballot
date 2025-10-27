@@ -1,4 +1,3 @@
-import AIThinkingParameters from '@/components/AIThinkingParameters';
 import AnimatedEventCard from '@/components/AnimatedEventCard';
 import StreamingText from '@/components/StreamingText';
 import { Text, View } from '@/components/Themed';
@@ -326,7 +325,8 @@ export default function HomeScreen() {
           {/* Show loading indicator for events */}
           {viewportHeight > 0 && !location.isLoading && location.currentLocation && discoveryEvents.isLoading && (
             <View style={{ height: viewportHeight, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center' }}>
-              <AIThinkingParameters location={location.currentLocation} />
+              <ActivityIndicator size="large" color="rgba(255, 255, 255, 0.7)" />
+              <Text style={{ color: 'rgba(255,255,255,0.5)', marginTop: 16 }}>Searching for events in {location.currentLocation}...</Text>
             </View>
           )}
           {/* Show streaming text when new events are found */}

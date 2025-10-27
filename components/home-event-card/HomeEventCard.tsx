@@ -6,6 +6,7 @@ import { SavedEvent } from '@/types/event';
 import { Image } from 'expo-image';
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 import Svg, { Path } from 'react-native-svg';
 
 interface HomeEventCardProps extends SavedEvent {
@@ -42,6 +43,7 @@ const ShareIcon = () => (
     />
   </Svg>
 );
+
 
 export function HomeEventCard({
   id,
@@ -106,68 +108,80 @@ export function HomeEventCard({
         }
         back={
           <View style={styles.backFaceContainer}>
-            <View style={styles.eventContent}>
-              <Text style={styles.backTitle}>{title}</Text>
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollViewContent}
+              showsVerticalScrollIndicator={false}
+              bounces={true}
+              nestedScrollEnabled={true}
+              directionalLockEnabled={true}
+            >
+              <View style={styles.eventContent}>
+                <Text style={styles.backTitle}>{title}</Text>
 
-              {/* Top Section - Event Details */}
-              <View style={styles.detailsSection}>
-                {venue && (
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Venue</Text>
-                    <Text style={styles.detailValue}>{venue}</Text>
-                  </View>
-                )}
-
-                {address && (
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Address</Text>
-                    <View style={styles.addressRow}>
-                      <Text style={[styles.detailValue, styles.addressText]}>{address}</Text>
-                      <LocationIcon />
+                {/* Top Section - Event Details */}
+                <View style={styles.detailsSection}>
+                  {venue && (
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>Venue</Text>
+                      <Text style={styles.detailValue}>{venue}</Text>
                     </View>
-                  </View>
-                )}
+                  )}
 
-                {organizer && (
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Organizer</Text>
-                    <Text style={styles.detailValue}>{organizer}</Text>
-                  </View>
-                )}
+                  {address && (
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>Address</Text>
+                      <View style={styles.addressRow}>
+                        <Text style={[styles.detailValue, styles.addressText]}>{address}</Text>
+                        <LocationIcon />
+                      </View>
+                    </View>
+                  )}
 
-                {websiteLink && (
-                  <View style={styles.detailItem}>
-                    <Text style={styles.detailLabel}>Website</Text>
-                    <Text style={[styles.detailValue, styles.linkText]} numberOfLines={1}>
-                      {websiteLink}
+                  {organizer && (
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>Organizer</Text>
+                      <Text style={styles.detailValue}>{organizer}</Text>
+                    </View>
+                  )}
+
+                  {websiteLink && (
+                    <View style={styles.detailItem}>
+                      <Text style={styles.detailLabel}>Website</Text>
+                      <Text style={[styles.detailValue, styles.linkText]} numberOfLines={1}>
+                        {websiteLink}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Bottom Section - Impact & Q&A */}
+                {(impactStatement || aiOverview) && (
+                  <View style={styles.impactSection}>
+                    <Text style={styles.impactHeading}>Impact of This Event</Text>
+                    <Text style={styles.impactText}>
+                      {impactStatement || aiOverview}
                     </Text>
                   </View>
                 )}
+
+                {qaPairs && qaPairs.length > 0 && (
+                  <View style={styles.qaSection}>
+                    {qaPairs.map((qa, index) => (
+                      <View key={index} style={styles.qaItem}>
+                        <Text style={styles.qaQuestion}>{qa.question}</Text>
+                        <Text style={styles.qaAnswer}>{qa.answer}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
               </View>
+            </ScrollView>
 
-              {/* Bottom Section - Impact & Q&A */}
-              {(impactStatement || aiOverview) && (
-                <View style={styles.impactSection}>
-                  <Text style={styles.impactHeading}>Impact of This Event</Text>
-                  <Text style={styles.impactText}>
-                    {impactStatement || aiOverview}
-                  </Text>
-                </View>
-              )}
-
-              {qaPairs && qaPairs.length > 0 && (
-                <View style={styles.qaSection}>
-                  {qaPairs.map((qa, index) => (
-                    <View key={index} style={styles.qaItem}>
-                      <Text style={styles.qaQuestion}>{qa.question}</Text>
-                      <Text style={styles.qaAnswer}>{qa.answer}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              <TouchableOpacity style={styles.backButton} onPress={onUnflip}>
-                <Text style={styles.backButtonText}>Back</Text>
+            {/* Close Details button at bottom */}
+            <View style={styles.backButtonContainer}>
+              <TouchableOpacity style={styles.closeDetailsButton} onPress={onUnflip}>
+                <Text style={styles.closeDetailsText}>Close Details</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -210,6 +224,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#151515',
     width: '100%',
     height: '100%',
+    flexDirection: 'column',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    paddingBottom: 20,
+  },
+  backButtonContainer: {
+    padding: 20,
+    paddingTop: 16,
+    backgroundColor: '#151515',
+  },
+  closeDetailsButton: {
+    height: 54,
+    backgroundColor: 'transparent',
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeDetailsText: {
+    fontSize: 15,
+    fontWeight: '400',
+    color: '#FFFFFF',
+    lineHeight: 22.5,
+    letterSpacing: -0.3,
   },
   eventTitle: {
     fontSize: 20,
@@ -258,22 +300,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewDetailsText: {
-    fontSize: 15,
-    fontWeight: '400',
-    color: '#FFFFFF',
-    lineHeight: 22.5,
-    letterSpacing: -0.3,
-  },
-  backButton: {
-    height: 54,
-    backgroundColor: 'transparent',
-    borderRadius: 100,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backButtonText: {
     fontSize: 15,
     fontWeight: '400',
     color: '#FFFFFF',

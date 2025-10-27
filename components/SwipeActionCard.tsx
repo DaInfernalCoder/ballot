@@ -59,6 +59,7 @@ export function SwipeActionCard({ children, onSwipeRight, onSwipeLeft }: SwipeAc
 
   const gesture = Gesture.Pan()
     .activeOffsetX([-16, 16])
+    .activeOffsetY([-20, 20])
     .onStart(() => {
       startX.value = translateX.value;
     })
@@ -104,7 +105,12 @@ export function SwipeActionCard({ children, onSwipeRight, onSwipeLeft }: SwipeAc
       </Animated.View>
 
       <GestureDetector gesture={gesture}>
-        <Animated.View style={[styles.card, cardStyle]}>
+        <Animated.View
+          style={[styles.card, cardStyle]}
+          needsOffscreenAlphaCompositing={false}
+          shouldRasterizeIOS={false}
+          renderToHardwareTextureAndroid={false}
+        >
           {children}
         </Animated.View>
       </GestureDetector>
