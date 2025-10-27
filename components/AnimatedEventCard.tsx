@@ -15,7 +15,6 @@ interface AnimatedEventCardProps {
   onFlip: () => void;
   onUnflip: () => void;
   onDismiss: (id: string) => void;
-  deckMode?: boolean;
   entranceDelay?: number;
 }
 
@@ -26,7 +25,6 @@ export default function AnimatedEventCard({
   onFlip,
   onUnflip,
   onDismiss,
-  deckMode = false,
   entranceDelay = 0,
 }: AnimatedEventCardProps) {
   const translateY = useSharedValue(50);
@@ -82,11 +80,14 @@ export default function AnimatedEventCard({
         tags={event.tags}
         venue={event.venue}
         address={event.address}
+        organizer={event.organizer}
+        websiteLink={event.websiteLink}
+        impactStatement={event.impactStatement}
+        qaPairs={event.qaPairs}
         flipped={flipped}
         onFlip={onFlip}
         onUnflip={onUnflip}
         onDismiss={onDismiss}
-        deckMode={deckMode}
       />
     </Animated.View>
   );

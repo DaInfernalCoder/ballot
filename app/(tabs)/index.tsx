@@ -1,12 +1,10 @@
 import AIThinkingParameters from '@/components/AIThinkingParameters';
 import AnimatedEventCard from '@/components/AnimatedEventCard';
-import CardDeckView from '@/components/CardDeckView';
 import StreamingText from '@/components/StreamingText';
 import { Text, View } from '@/components/Themed';
 import { useDiscoveryEvents } from '@/contexts/discovery-events-context';
 import { useEvents } from '@/contexts/events-context';
 import { useLocation } from '@/contexts/location-context';
-import { loadViewMode, saveViewMode, ViewMode } from '@/utils/view-mode-storage';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { Image } from 'expo-image';
 import { useEffect, useMemo, useState } from 'react';
@@ -67,19 +65,6 @@ const MyLocationIcon = () => (
   </Svg>
 );
 
-const DeckViewIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14z" fill="white" fillOpacity={0.7} />
-    <Path d="M7 7h10v2H7zM7 11h10v2H7zM7 15h7v2H7z" fill="white" fillOpacity={0.7} />
-  </Svg>
-);
-
-const ListViewIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" fill="white" fillOpacity={0.7} />
-  </Svg>
-);
-
 export default function HomeScreen() {
   const location = useLocation();
   const discoveryEvents = useDiscoveryEvents();
@@ -91,8 +76,6 @@ export default function HomeScreen() {
   const [flippedIndex, setFlippedIndex] = useState<number | null>(null);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [showStreamingText, setShowStreamingText] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [currentDeckIndex, setCurrentDeckIndex] = useState(0);
   const tabBarHeight = useBottomTabBarHeight();
   const [containerHeight, setContainerHeight] = useState(0);
   const viewportHeight = Math.max(0, containerHeight - tabBarHeight);
@@ -107,11 +90,6 @@ export default function HomeScreen() {
     const mid = Math.floor(INFINITE_COUNT / 2);
     return mid - (mid % EVENTS_LENGTH); // align to first item
   }, [EVENTS_LENGTH]);
-
-  // Load saved view mode preference
-  useEffect(() => {
-    loadViewMode().then(setViewMode);
-  }, []);
 
   // Request location on first launch if not asked before
   useEffect(() => {
@@ -256,23 +234,16 @@ export default function HomeScreen() {
   const handleRefresh = async () => {
     setDismissedIds(new Set());
     setFlippedIndex(null);
-    setCurrentDeckIndex(0);
     if (location.currentLocation) {
       await discoveryEvents.refreshEvents(location.currentLocation);
     }
-  };
-
-  const handleToggleView = async () => {
-    const newMode: ViewMode = viewMode === 'list' ? 'deck' : 'list';
-    setViewMode(newMode);
-    await saveViewMode(newMode);
   };
 
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
 
-      {/* Header with Logo, View Toggle, and Location Pin */}
+      {/* Header with Logo and Location Pin */}
       <View style={styles.header}>
         <Image
           source={require('@/assets/images/ballot-logo-258118.png')}
@@ -280,16 +251,7 @@ export default function HomeScreen() {
           contentFit="contain"
           transition={100}
         />
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            onPress={handleToggleView}
-            style={styles.viewToggleButton}
-            accessibilityRole="button"
-            accessibilityLabel={`Switch to ${viewMode === 'list' ? 'deck' : 'list'} view`}
-          >
-            {viewMode === 'list' ? <DeckViewIcon /> : <ListViewIcon />}
-          </TouchableOpacity>
-          <TouchableOpacity 
+        <TouchableOpacity 
             style={styles.locationButtonContainer}
             onPress={handlePress}
             activeOpacity={1}
@@ -341,7 +303,6 @@ export default function HomeScreen() {
             )}
           </Animated.View>
         </TouchableOpacity>
-        </View>
       </View>
 
       {/* Main Content - Vertically paged list of event cards */}
@@ -415,7 +376,7 @@ export default function HomeScreen() {
             </View>
           )}
           {/* Show events when location is set */}
-          {viewportHeight > 0 && location.currentLocation && !discoveryEvents.error && EVENTS_LENGTH > 0 && !showStreamingText && viewMode === 'list' && (
+          {viewportHeight > 0 && location.currentLocation && !discoveryEvents.error && EVENTS_LENGTH > 0 && !showStreamingText && (
           <VirtualizedList
             data={VISIBLE_EVENTS}
             getItemCount={() => INFINITE_COUNT}
@@ -451,38 +412,10 @@ export default function HomeScreen() {
                     onFlip={() => setFlippedIndex(index)}
                     onUnflip={() => setFlippedIndex(null)}
                     onDismiss={(id) => setDismissedIds(prev => new Set([...prev, id]))}
-                    deckMode={false}
                   />
                 </View>
               </View>
             )}
-          />
-        )}
-        {/* Show deck view when in deck mode */}
-        {viewportHeight > 0 && location.currentLocation && EVENTS_LENGTH > 0 && !showStreamingText && viewMode === 'deck' && (
-          <CardDeckView
-            data={VISIBLE_EVENTS}
-            renderCard={(event, index) => (
-              <AnimatedEventCard
-                event={event}
-                index={index}
-                flipped={flippedIndex === index}
-                onFlip={() => setFlippedIndex(index)}
-                onUnflip={() => setFlippedIndex(null)}
-                onDismiss={(id) => setDismissedIds(prev => new Set([...prev, id]))}
-                deckMode={true}
-              />
-            )}
-            onSwipeUp={(event) => {
-              addSavedEvent(event);
-              setDismissedIds(prev => new Set([...prev, event.id]));
-            }}
-            onSwipeDown={(event) => {
-              setDismissedIds(prev => new Set([...prev, event.id]));
-            }}
-            currentIndex={currentDeckIndex}
-            onIndexChange={setCurrentDeckIndex}
-            containerHeight={viewportHeight}
           />
         )}
         {/* Show "no more events" when location is set but all events dismissed */}
@@ -522,19 +455,6 @@ const styles = StyleSheet.create({
   logo: {
     width: 117,
     height: 29,
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  viewToggleButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   locationButtonContainer: {
     position: 'relative',

@@ -1,6 +1,14 @@
 import { ImageSourcePropType } from 'react-native';
 
 /**
+ * Q&A pair for event details view
+ */
+export interface EventQAPair {
+  question: string;
+  answer: string;
+}
+
+/**
  * Base event structure shared across the app
  */
 export interface BaseEvent {
@@ -23,6 +31,10 @@ export interface DiscoveredEvent extends BaseEvent {
   sourceUrls?: string[]; // Source URLs from Perplexity
   tags?: string[]; // Event tags/categories
   venue?: string; // Venue name
+  organizer?: string; // Event organizer
+  websiteLink?: string; // Event website URL
+  impactStatement?: string; // Why this event matters (for details view)
+  qaPairs?: EventQAPair[]; // 3 Q&A pairs for details view
 }
 
 /**
@@ -36,6 +48,10 @@ export interface SavedEvent extends BaseEvent {
   sourceUrls?: string[];
   tags?: string[];
   venue?: string;
+  organizer?: string;
+  websiteLink?: string;
+  impactStatement?: string;
+  qaPairs?: EventQAPair[];
 }
 
 /**
@@ -64,6 +80,13 @@ export interface PerplexityEventData {
   link?: string;
   source_urls: string[];
   tags?: string[];
+  organizer?: string;
+  website_link?: string;
+  impact_statement?: string;
+  qa_pairs?: Array<{
+    question: string;
+    answer: string;
+  }>;
 }
 
 /**

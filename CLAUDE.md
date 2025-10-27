@@ -144,12 +144,9 @@ GestureHandlerRootView
                   └─ Stack Navigator
 ```
 
-### Dual View Modes: List and Deck
+### List View
 
-The home screen supports two viewing modes with persistent preference storage:
-
-#### List View (Default)
-Quizlet-style infinite card swiping using `VirtualizedList`:
+The home screen uses a Quizlet-style infinite card swiping interface built with `VirtualizedList`:
 
 ```typescript
 // Pattern in app/(tabs)/index.tsx
@@ -158,58 +155,22 @@ INITIAL_INDEX = (INFINITE_COUNT/2) - (INFINITE_COUNT/2) % EVENTS_LENGTH
 // Access via: data[index % data.length]
 ```
 
+**Features**:
 - Full-screen vertical paging (one card at a time)
 - Modulo mapping creates infinite scroll illusion
 - Dismissed cards filtered out dynamically
 - Horizontal swipe gestures: right = save, left = dismiss
 - `windowSize=3` for performance (only 3 cards rendered)
 
+**Component Hierarchy**:
+```
+AnimatedEventCard
+  └─ HomeEventCard
+      └─ SwipeActionCard (horizontal swipe gestures)
+          └─ FlippableCard (3D flip animation)
+```
+
 **Why this pattern**: Simulates Tinder/Quizlet UX without re-rendering entire list
-
-#### Deck View (BigUIPaging-Inspired)
-Horizontal card deck with stacked cards:
-
-**File**: `components/CardDeckView.tsx`
-
-- Front card at full size, 2-3 cards behind scaled to 0.9x
-- Z-index layering for depth effect (front card has highest z-index)
-- Progress indicator dots at bottom
-- Horizontal swipe gestures: left/right = navigate between cards
-- Vertical swipe gestures: up = save event, down = dismiss event
-- Spring physics for smooth card transitions (damping: 20, stiffness: 150)
-- Only renders 3 cards at a time (current + 2 behind) for performance
-
-**Gesture System** (`components/CardDeckGestureHandler.tsx`):
-- Multi-directional gesture detection with direction locking
-- Detects dominant direction in first 50px of movement
-- Locks to that axis for remainder of gesture
-- Horizontal threshold: 30% of screen width to commit navigation
-- Vertical threshold: 100px to commit save/dismiss
-- Uses `useSharedValue` for UI thread animations
-
-**View Toggle**:
-- Toggle button in header (next to location pin)
-- Preference persisted to AsyncStorage at `@ballot:view_mode`
-- Loads saved preference on app launch
-- Utility functions in `utils/view-mode-storage.ts`
-
-**Component Hierarchy for Deck Mode**:
-```
-CardDeckView
-  └─ CardStackLayer (for each visible card)
-      └─ CardDeckGestureHandler (only for front card)
-          └─ AnimatedEventCard
-              └─ HomeEventCard (with deckMode={true})
-                  └─ FlippableCard (no SwipeActionCard wrapper in deck mode)
-```
-
-**Key Differences from List Mode**:
-- List mode: `SwipeActionCard` wraps `FlippableCard` for horizontal swipes
-- Deck mode: `CardDeckGestureHandler` wraps entire card for multi-directional gestures
-- List mode: Vertical paging with infinite scroll
-- Deck mode: Horizontal navigation with stacked cards
-- List mode: Swipe right = save, left = dismiss
-- Deck mode: Swipe up = save, down = dismiss, left/right = navigate
 
 ### AI Thinking Animation System
 

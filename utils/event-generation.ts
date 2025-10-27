@@ -112,6 +112,14 @@ function transformToDiscoveredEvent(data: PerplexityEventData): DiscoveredEvent 
     aiOverview: data.ai_overview.trim(),
     image,
     imageKey,
+    venue: data.address.venue?.trim(),
+    link: data.link,
+    sourceUrls: data.source_urls,
+    tags: data.tags,
+    organizer: data.organizer?.trim(),
+    websiteLink: data.website_link,
+    impactStatement: data.impact_statement?.trim(),
+    qaPairs: data.qa_pairs,
   };
 }
 
@@ -184,7 +192,23 @@ JSON SCHEMA:
             "ai_overview": { "type": "string", "description": "<= 60 words. Neutral, factual." },
             "link": { "type": "string" },
             "source_urls": { "type": "array", "items": { "type": "string" } },
-            "tags": { "type": "array", "items": { "type": "string" } }
+            "tags": { "type": "array", "items": { "type": "string" } },
+            "organizer": { "type": "string", "description": "Name of organizing body or person" },
+            "website_link": { "type": "string", "description": "Official event website URL if available" },
+            "impact_statement": { "type": "string", "description": "1-2 sentences explaining why this event matters to the community" },
+            "qa_pairs": {
+              "type": "array",
+              "maxItems": 3,
+              "items": {
+                "type": "object",
+                "required": ["question", "answer"],
+                "properties": {
+                  "question": { "type": "string" },
+                  "answer": { "type": "string", "description": "Concise 1-2 sentence answer" }
+                }
+              },
+              "description": "Exactly 3 Q&A pairs: 'Who is this for?', 'Why does it matter?', 'What should I expect?'"
+            }
           }
         }
       }
@@ -209,7 +233,7 @@ Inclusion rules:
 - Max 10 items.
 
 Output:
-- cards[] with name, date, time.start, time.end if known, address{venue,street,city,state,postal_code,country}, location{lat,lon} if present, ai_overview, link, source_urls[].
+- cards[] with name, date, time.start, time.end if known, address{venue,street,city,state,postal_code,country}, location{lat,lon} if present, ai_overview, link, source_urls[], organizer, website_link, impact_statement (1-2 sentences), qa_pairs[] with exactly 3 items answering: 'Who is this for?', 'Why does it matter?', 'What should I expect?'.
 - Do not include any text outside the JSON.`;
 }
 
@@ -379,33 +403,87 @@ export function getFallbackEvents(): DiscoveredEvent[] {
       title: 'Community Meeting - Discuss Development Plans',
       location: 'Phoenix, Arizona',
       address: '200 W Washington St, Phoenix, AZ 85003',
+      venue: 'Phoenix City Hall',
       date: 'Dec 12, 2024 • 7:30 PM',
       time: '7:30 PM',
       aiOverview: 'Join us for a community meeting to discuss upcoming development plans in downtown Phoenix. Local officials and residents will gather to review proposed projects and provide feedback.',
       image: require('@/assets/images/event1.png'),
       imageKey: 'event1',
+      organizer: 'Phoenix City Council',
+      websiteLink: 'https://www.phoenix.gov',
+      impactStatement: 'This meeting provides a crucial opportunity for residents to voice concerns and shape the future development of downtown Phoenix, ensuring community needs are prioritized.',
+      qaPairs: [
+        {
+          question: 'Who is this for?',
+          answer: 'Local residents, business owners, and anyone interested in downtown Phoenix development.',
+        },
+        {
+          question: 'Why does it matter?',
+          answer: 'Community input directly influences city planning decisions and ensures development aligns with resident needs.',
+        },
+        {
+          question: 'What should I expect?',
+          answer: 'Presentations on proposed projects, Q&A with city officials, and opportunities to provide written feedback.',
+        },
+      ],
     },
     {
       id: 'fallback-2',
       title: 'Town Hall - Education Reform Debate',
       location: 'Austin, Texas',
       address: '301 W 2nd St, Austin, TX 78701',
+      venue: 'Austin City Hall',
       date: 'Jan 08, 2025 • 6:00 PM',
       time: '6:00 PM',
       aiOverview: 'An open town hall forum to debate education reform proposals. School board members and community leaders will present plans and answer questions from concerned parents and educators.',
       image: require('@/assets/images/event2.png'),
       imageKey: 'event2',
+      organizer: 'Austin Independent School District',
+      websiteLink: 'https://www.austinisd.org',
+      impactStatement: 'The proposed education reforms will affect curriculum, funding, and resources across all Austin public schools, making this a critical event for families and educators.',
+      qaPairs: [
+        {
+          question: 'Who is this for?',
+          answer: 'Parents, teachers, students, and anyone concerned about education policy in Austin.',
+        },
+        {
+          question: 'Why does it matter?',
+          answer: 'These reforms will shape education quality and resources for thousands of students across the district.',
+        },
+        {
+          question: 'What should I expect?',
+          answer: 'Policy presentations, moderated debate, and open forum for public questions and comments.',
+        },
+      ],
     },
     {
       id: 'fallback-3',
       title: 'Policy Forum - Climate Action Strategy',
       location: 'Seattle, Washington',
       address: '600 4th Ave, Seattle, WA 98104',
+      venue: 'Seattle Municipal Tower',
       date: 'Feb 02, 2025 • 5:30 PM',
       time: '5:30 PM',
       aiOverview: 'A policy forum focused on Seattle\'s climate action strategy for the next decade. Environmental experts and city planners will discuss sustainability initiatives and carbon reduction goals.',
       image: require('@/assets/images/event3.png'),
       imageKey: 'event3',
+      organizer: 'Seattle Office of Sustainability & Environment',
+      websiteLink: 'https://www.seattle.gov/environment',
+      impactStatement: 'Seattle\'s climate strategy will set binding targets for emissions reduction and green infrastructure, directly affecting city policies and residents\' daily lives.',
+      qaPairs: [
+        {
+          question: 'Who is this for?',
+          answer: 'Environmental advocates, city residents, businesses, and anyone interested in climate action.',
+        },
+        {
+          question: 'Why does it matter?',
+          answer: 'The strategy establishes concrete goals and timelines for Seattle to achieve carbon neutrality and climate resilience.',
+        },
+        {
+          question: 'What should I expect?',
+          answer: 'Expert presentations on climate data, proposed initiatives, and interactive discussion on implementation strategies.',
+        },
+      ],
     },
   ];
 }

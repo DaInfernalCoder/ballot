@@ -14,7 +14,6 @@ interface HomeEventCardProps extends SavedEvent {
   onUnflip: () => void;
   onDismiss: (id: string) => void;
   style?: any;
-  deckMode?: boolean;
 }
 
 const LocationIcon = () => (
@@ -56,7 +55,13 @@ export function HomeEventCard({
   onUnflip,
   onDismiss,
   style,
-  deckMode = false,
+  address,
+  venue,
+  organizer,
+  websiteLink,
+  impactStatement,
+  qaPairs,
+  aiOverview,
 }: HomeEventCardProps) {
   const { addSavedEvent } = useEvents();
 
@@ -64,7 +69,6 @@ export function HomeEventCard({
     <FlippableCard
       style={[
         styles.eventCard,
-        deckMode && styles.eventCardDeck,
         style,
       ]}
       flipped={flipped}
@@ -104,16 +108,64 @@ export function HomeEventCard({
           <View style={styles.backFaceContainer}>
             <View style={styles.eventContent}>
               <Text style={styles.backTitle}>{title}</Text>
-              <View style={styles.eventDetails}>
-                <View style={styles.detailRow}>
-                  <LocationIcon />
-                  <Text style={styles.detailText}>{location}</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <CalendarIcon />
-                  <Text style={styles.detailText}>{date}</Text>
-                </View>
+
+              {/* Top Section - Event Details */}
+              <View style={styles.detailsSection}>
+                {venue && (
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Venue</Text>
+                    <Text style={styles.detailValue}>{venue}</Text>
+                  </View>
+                )}
+
+                {address && (
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Address</Text>
+                    <View style={styles.addressRow}>
+                      <Text style={[styles.detailValue, styles.addressText]}>{address}</Text>
+                      <LocationIcon />
+                    </View>
+                  </View>
+                )}
+
+                {organizer && (
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Organizer</Text>
+                    <Text style={styles.detailValue}>{organizer}</Text>
+                  </View>
+                )}
+
+                {websiteLink && (
+                  <View style={styles.detailItem}>
+                    <Text style={styles.detailLabel}>Website</Text>
+                    <Text style={[styles.detailValue, styles.linkText]} numberOfLines={1}>
+                      {websiteLink}
+                    </Text>
+                  </View>
+                )}
               </View>
+
+              {/* Bottom Section - Impact & Q&A */}
+              {(impactStatement || aiOverview) && (
+                <View style={styles.impactSection}>
+                  <Text style={styles.impactHeading}>Impact of This Event</Text>
+                  <Text style={styles.impactText}>
+                    {impactStatement || aiOverview}
+                  </Text>
+                </View>
+              )}
+
+              {qaPairs && qaPairs.length > 0 && (
+                <View style={styles.qaSection}>
+                  {qaPairs.map((qa, index) => (
+                    <View key={index} style={styles.qaItem}>
+                      <Text style={styles.qaQuestion}>{qa.question}</Text>
+                      <Text style={styles.qaAnswer}>{qa.answer}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
               <TouchableOpacity style={styles.backButton} onPress={onUnflip}>
                 <Text style={styles.backButtonText}>Back</Text>
               </TouchableOpacity>
@@ -123,12 +175,7 @@ export function HomeEventCard({
       />
   );
 
-  // In deck mode, gestures are handled by CardDeckGestureHandler
-  if (deckMode) {
-    return cardContent;
-  }
-
-  // In list mode, use SwipeActionCard for horizontal swipe gestures
+  // Use SwipeActionCard for horizontal swipe gestures
   return (
     <SwipeActionCard
       onSwipeRight={() => {
@@ -151,18 +198,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginTop: 25,
     zIndex: 2,
-  },
-  eventCardDeck: {
-    borderRadius: 45,
-    marginTop: 0,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.44,
-    shadowRadius: 10.32,
-    elevation: 16,
   },
   eventImage: {
     width: '100%',
@@ -254,6 +289,74 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  detailsSection: {
+    marginBottom: 16,
+    gap: 12,
+  },
+  detailItem: {
+    gap: 4,
+  },
+  detailLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    opacity: 0.54,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    lineHeight: 20,
+    opacity: 0.92,
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  addressText: {
+    flex: 1,
+  },
+  linkText: {
+    color: '#60A5FA',
+    textDecorationLine: 'underline',
+  },
+  impactSection: {
+    marginBottom: 16,
+  },
+  impactHeading: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    opacity: 0.92,
+  },
+  impactText: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    lineHeight: 20,
+    opacity: 0.7,
+  },
+  qaSection: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  qaItem: {
+    gap: 4,
+  },
+  qaQuestion: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    opacity: 0.87,
+  },
+  qaAnswer: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    lineHeight: 18,
+    opacity: 0.7,
   },
 });
 
