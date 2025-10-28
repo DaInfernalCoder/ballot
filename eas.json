@@ -13,22 +13,18 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "simulator": false,
-        "bundleIdentifier": "com.ballot.app"
+        "simulator": false
       },
       "android": {
-        "buildType": "apk",
-        "package": "com.ballot.app"
+        "buildType": "apk"
       }
     },
     "production": {
       "ios": {
-        "bundleIdentifier": "com.ballot.app",
         "autoIncrement": true
       },
       "android": {
-        "buildType": "app-bundle",
-        "package": "com.ballot.app"
+        "buildType": "app-bundle"
       }
     }
   },

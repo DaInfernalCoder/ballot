@@ -63,6 +63,9 @@ module.exports = {
     },
     // Environment variables exposed to the app via expo-constants
     extra: {
+      eas: {
+        projectId: '538edb14-e063-41b9-a325-e996bdd5c9f9',
+      },
       OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
       SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
       SUPABASE_KEY: process.env.EXPO_PUBLIC_SUPABASE_KEY,
