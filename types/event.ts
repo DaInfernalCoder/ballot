@@ -35,6 +35,7 @@ export interface DiscoveredEvent extends BaseEvent {
   websiteLink?: string; // Event website URL
   impactStatement?: string; // Why this event matters (for details view)
   qaPairs?: EventQAPair[]; // 3 Q&A pairs for details view
+  imageUrl?: string; // Unsplash image URL (prioritized over local image)
 }
 
 /**
@@ -52,6 +53,8 @@ export interface SavedEvent extends BaseEvent {
   websiteLink?: string;
   impactStatement?: string;
   qaPairs?: EventQAPair[];
+  imageUrl?: string; // Unsplash image URL (prioritized over local image)
+  notificationId?: string; // Scheduled notification ID for this event
 }
 
 /**
@@ -87,6 +90,7 @@ export interface PerplexityEventData {
     question: string;
     answer: string;
   }>;
+  unsplash_image_keyword?: string; // Keyword for Unsplash image search
 }
 
 /**
@@ -98,7 +102,17 @@ export interface SerializedEvent {
   location: string;
   date: string;
   imageKey: string;
+  imageUrl?: string; // Unsplash image URL
   address?: string;
   time?: string;
   aiOverview?: string;
+  link?: string;
+  sourceUrls?: string[];
+  tags?: string[];
+  venue?: string;
+  organizer?: string;
+  websiteLink?: string;
+  impactStatement?: string;
+  qaPairs?: EventQAPair[];
+  notificationId?: string; // Scheduled notification ID for this event
 }

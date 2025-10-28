@@ -51,20 +51,28 @@ export function HomeEventCard({
   date,
   image,
   imageKey,
+  imageUrl,
   flipped,
   onFlip,
   onUnflip,
   onDismiss,
   style,
   address,
+  time,
   venue,
   organizer,
   websiteLink,
   impactStatement,
   qaPairs,
   aiOverview,
+  link,
+  sourceUrls,
+  tags,
 }: HomeEventCardProps) {
   const { addSavedEvent } = useEvents();
+
+  // Prioritize Unsplash URL over local image
+  const imageSource = imageUrl ? { uri: imageUrl } : image;
 
   const cardContent = (
     <FlippableCard
@@ -76,11 +84,12 @@ export function HomeEventCard({
       front={
           <>
             <Image
-              source={image}
+              source={imageSource}
               style={styles.eventImage}
               contentFit="cover"
-              transition={100}
+              transition={200}
               allowDownscaling
+              placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
             />
             <View style={styles.eventContent}>
               <Text style={styles.eventTitle}>{title}</Text>
@@ -192,7 +201,26 @@ export function HomeEventCard({
   return (
     <SwipeActionCard
       onSwipeRight={() => {
-        addSavedEvent({ id, title, location, date, image, imageKey });
+        addSavedEvent({
+          id,
+          title,
+          location,
+          date,
+          image,
+          imageKey,
+          imageUrl,
+          address,
+          time,
+          venue,
+          organizer,
+          websiteLink,
+          impactStatement,
+          qaPairs,
+          aiOverview,
+          link,
+          sourceUrls,
+          tags,
+        });
         onDismiss(id);
       }}
       onSwipeLeft={() => onDismiss(id)}

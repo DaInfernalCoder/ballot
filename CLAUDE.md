@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+IMPORTANT: update claude.md as things change and it becomes outdated. 
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -41,6 +43,7 @@ The project uses `.env.local` for API keys and configuration:
 
 ```bash
 OPENROUTER_API_KEY=...    # Required for AI-powered event discovery (OpenRouter API)
+UNSPLASH_ACCESS_KEY=...   # Required for dynamic event images (Unsplash API)
 SUPABASE_URL=...          # Future backend integration
 SUPABASE_KEY=...          # Future backend integration
 ```
@@ -148,9 +151,13 @@ GestureHandlerRootView
 
 The back of each card features:
 - **Scrollable content**: Event details (venue, address, organizer, website) and AI-generated impact statement
+- **Custom always-visible scrollbar**: iOS-style thin scrollbar (4px) with draggable thumb on the right side (`components/CustomScrollbar.tsx`)
+  - Built with Reanimated v4 Gesture API + Gesture Handler for smooth 60fps performance
+  - Thumb size adapts to content ratio, always visible when content is scrollable, user can drag to scroll
+  - Minimum thumb height: 50px, semi-transparent white (60% opacity with subtle shadow)
 - **Fixed bottom button**: "Close Details" button styled identically to "View Details" on front
 - **Nested scroll behavior**: When scrolled to top/bottom edges, vertical swipes pass through to parent VirtualizedList for card navigation
-- **Gesture coordination**: Horizontal swipes (add/delete) work independently of vertical scrolling
+- **Gesture coordination**: Horizontal swipes (add/delete) work independently of vertical scrolling and scrollbar dragging
 
 ### List View
 
@@ -256,7 +263,7 @@ import HomeIcon from '@/assets/images/home-icon.svg';
 **Prompt Architecture**:
 - **System**: Instructs to return valid JSON only
 - **User**: Location + date range + event type filters + max count
-- **Output**: JSON schema with cards array (name, date, time, address, ai_overview, link, source_urls, tags)
+- **Output**: JSON schema with cards array (name, date, time, address, ai_overview, link, source_urls, tags, unsplash_image_keyword)
 
 #### Event Generation Flow
 **File**: `utils/event-generation.ts`
@@ -264,12 +271,39 @@ import HomeIcon from '@/assets/images/home-icon.svg';
 1. Call OpenRouter API with Perplexity Sonar Pro model and location
 2. Parse response (handles `<think>` tags, markdown code fences)
 3. Validate each event via `validateEventData()`
-4. Transform `PerplexityEventData` → `DiscoveredEvent`
-5. Generate stable hash-based IDs: `event-{hash(title+date+location)}-{timestamp}`
-6. Assign random images from pool (event1-5, event-image)
-7. Filter invalid events, return array
+4. **Fetch Unsplash images in parallel**: Use AI-provided `unsplash_image_keyword` for each event
+5. Transform `PerplexityEventData` → `DiscoveredEvent` with dynamic images
+6. Generate stable hash-based IDs: `event-{hash(title+date+location)}-{timestamp}`
+7. If Unsplash fetch fails: fallback to random local images (event1-3)
+8. Filter invalid events, return array
 
 **Fallback Events**: If API fails completely, returns 3 hardcoded sample events for Phoenix/Austin/Seattle
+
+#### Unsplash Image Integration
+**File**: `utils/unsplash-api.ts`
+**Provider**: Unsplash API (https://unsplash.com/developers)
+**Endpoint**: `https://api.unsplash.com/photos/random`
+
+**How it works**:
+1. Perplexity AI generates `unsplash_image_keyword` for each event (e.g., "town-hall", "political-rally", "civic-meeting")
+2. Unsplash API fetches random image matching keyword with `orientation=landscape` and `content_filter=high`
+3. Image URL stored in `imageUrl` field of `DiscoveredEvent`
+4. UI component (`HomeEventCard`) prioritizes `imageUrl` over local fallback images
+
+**Error Handling**:
+- Timeout: 5 seconds per image request
+- Rate limiting (403): Falls back to local images
+- No results (404): Falls back to local images
+- Network errors: Falls back to local images
+- All fetches run in parallel for performance
+
+**Image Priority**:
+```typescript
+// In HomeEventCard.tsx
+const imageSource = imageUrl ? { uri: imageUrl } : image;
+```
+
+**Fallback Images**: Local images (event1.png, event2.png, event3.png) assigned randomly when Unsplash fails
 
 #### Event Caching System
 **File**: `utils/event-cache.ts`
@@ -327,6 +361,7 @@ if (age > ttl) {
   link?: string;
   source_urls?: string[];
   tags?: string[];
+  unsplash_image_keyword?: string;  // AI-generated keyword for image search
 }
 ```
 
@@ -338,8 +373,9 @@ if (age > ttl) {
   location: string;              // Display-formatted location string
   date: string;                  // Human-readable date
   time: string;                  // Human-readable time range
-  image: ImageSourcePropType;    // require() statement (not serializable)
+  image: ImageSourcePropType;    // require() statement (fallback, not serializable)
   imageKey: string;              // For serialization (e.g., "event1")
+  imageUrl?: string;             // Unsplash URL (prioritized over local image)
   aiOverview: string;
   link?: string;
   sourceUrls?: string[];
@@ -370,15 +406,13 @@ if (age > ttl) {
 
 **Transformation Flow**:
 ```
-Perplexity API Response
+Perplexity API Response (with unsplash_image_keyword)
   ↓ (parsePerplexityResponse)
 PerplexityEventData[]
-  ↓ (transformToDiscoveredEvent)
-DiscoveredEvent[]
-  ↓ (serializeEvent)
-SerializedEvent[]
-  ↓ (AsyncStorage)
-Cache Entry { location, events: SerializedEvent[], timestamp, version }
+  ↓ (fetchMultipleUnsplashImages) - parallel image fetching
+[imageUrl1, imageUrl2, ...] or [null, null, ...] on failure
+  ↓ (transformToDiscoveredEvent with imageUrl)
+DiscoveredEvent[] (with imageUrl if successful, fallback to local images)
 ```
 
 **Deserialization** (when loading from cache):
@@ -480,19 +514,20 @@ const discovered: DiscoveredEvent = {
 ### Performance
 - Use `VirtualizedList` with `windowSize`, `maxToRenderPerBatch` for lists
 - Use `removeClippedSubviews` on long lists
-- Lazy loading of images not needed (local assets loaded instantly)
-- Event caching implemented with 12-hour TTL in AsyncStorage
-- API calls minimized via cache-first strategy
+- Remote images (Unsplash) use expo-image with blurhash placeholder for smooth loading
+- Local fallback images load instantly
+- Unsplash images fetched in parallel (all at once) for better performance
+- 5-second timeout per image to prevent long waits
 
 ## Current Limitations & Context
 
 1. **Supabase Integration**: Environment variables present but not yet implemented
 2. **Search Radius**: No distance-based filtering (Perplexity returns any events in location)
 3. **No Tests**: Test infrastructure not set up (only `react-test-renderer` in devDeps)
-4. **Image Pool**: Limited to 6 static event images (randomly assigned)
+4. **Fallback Images**: Dynamic Unsplash images implemented, but fallback pool limited to 3 static images (event1-3). Plan to expand to 15 curated fallback images.
 5. **Dark Mode Only**: No light theme support
-6. **Event Updates**: No mechanism to update cached events from backend (cache-only invalidation)
-7. **OpenRouter Limits**: API has rate limits and costs per request (pay-per-token)
+6. **Event Updates**: No caching implemented - events fetched fresh each time
+7. **API Rate Limits**: Both OpenRouter and Unsplash have rate limits and costs per request
 
 ## Data Structure
 
@@ -506,14 +541,19 @@ Saved events (EventsContext) use this structure:
   location: string;
   date: string;
   time: string;
-  image: ImageSourcePropType;
-  imageKey: string;
+  image: ImageSourcePropType;  // Fallback local image
+  imageKey: string;             // For local image mapping
+  imageUrl?: string;            // Unsplash URL (prioritized if present)
   aiOverview: string;
   link?: string;
   sourceUrls?: string[];
   tags?: string[];
   venue?: string;
   address?: string;
+  organizer?: string;
+  websiteLink?: string;
+  impactStatement?: string;
+  qaPairs?: EventQAPair[];
 }
 ```
 
@@ -530,13 +570,15 @@ When adding new event images:
 When modifying event generation logic:
 1. Update prompt in `generateEventsForLocation()` (`utils/event-generation.ts`)
 2. Adjust `validateEventData()` if changing required fields
-3. Test with `forceRefresh` to bypass cache
+3. Update JSON schema if adding new fields (especially for Perplexity prompt)
 4. Check error handling with invalid API responses
 
-When changing cache TTL:
-1. Modify `DEFAULT_CACHE_TTL_MS` in `utils/event-cache.ts`
-2. Or pass custom `ttl` parameter to `loadCachedEvents()`
-3. Remember: Changes don't affect already-cached entries
+When working with Unsplash images:
+1. Keywords are AI-generated via `unsplash_image_keyword` field in Perplexity response
+2. To modify keyword suggestions, update the prompt in `createEventGenerationPrompt()` (`utils/event-generation.ts`)
+3. Images fetch in parallel during event generation - no separate API calls needed
+4. If Unsplash API fails/rate-limited, app automatically falls back to local images (event1-3)
+5. Test with invalid API key to verify fallback behavior works correctly
 
 When modifying gestures:
 1. Test all three gesture layers together
@@ -566,8 +608,8 @@ Better performance, better conflict resolution with ScrollView, seamless integra
 **Why OpenRouter with Perplexity Sonar Pro?**
 OpenRouter provides unified API access to multiple LLM providers with better rate limits and easier management. Perplexity's Sonar Pro model excels at real-time web search and structured output. Returns citations and sources, critical for civic event verification.
 
-**Why 12-hour cache TTL?**
-Balances fresh data with API cost/rate limits. Political events rarely change hourly. Users can manually refresh if needed.
+**Why Unsplash for images?**
+Dynamic, contextually-relevant images provide better UX than static placeholders. Perplexity AI generates optimal search keywords for each event type (e.g., "town-hall", "political-rally"), ensuring images match event context. Free tier supports 50 requests/hour, sufficient for typical usage. Graceful fallback to local images ensures app never breaks.
 
 **Why separate DiscoveryEventsContext from EventsContext?**
 Clear separation of concerns: discovery (ephemeral, location-based, cached) vs saved (persistent, user-curated, no expiry).
@@ -590,4 +632,4 @@ b857224 - Quizlet-like card swiping
 1ebd1be - Flippable card implementation
 ```
 
-The app recently completed major AI integration (OpenRouter API with Perplexity Sonar Pro for event discovery) with smart caching and AsyncStorage persistence. Core discovery flow is production-ready.
+The app has completed major AI integration (OpenRouter API with Perplexity Sonar Pro for event discovery) and Unsplash image integration for dynamic event imagery. Core discovery flow with AI-powered event generation and image fetching is production-ready.

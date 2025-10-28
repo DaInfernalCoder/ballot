@@ -1,16 +1,27 @@
 import { DiscoveryEventsProvider } from '@/contexts/discovery-events-context';
 import { EventsProvider } from '@/contexts/events-context';
 import { LocationProvider } from '@/contexts/location-context';
+import { requestNotificationPermissions } from '@/utils/notifications';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { Asset } from 'expo-asset';
 import { useFonts } from 'expo-font';
+import * as Notifications from 'expo-notifications';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import SplashScreenComponent from '../components/SplashScreenComponent';
+
+// Configure how notifications are handled when the app is in the foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 
 export {
@@ -91,6 +102,28 @@ function RootLayoutNav() {
       notification: '#FFFFFF',
     },
   };
+
+  // Request notification permissions on mount
+  useEffect(() => {
+    requestNotificationPermissions().then((granted) => {
+      if (granted) {
+        console.log('[App] Notification permissions granted');
+      } else {
+        console.warn('[App] Notification permissions denied');
+      }
+    });
+
+    // Set up notification listener for when notifications are tapped
+    const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const eventId = response.notification.request.content.data?.eventId;
+      if (eventId) {
+        console.log('[App] Notification tapped for event:', eventId);
+        // Could navigate to event details here in the future
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

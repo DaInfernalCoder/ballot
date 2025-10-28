@@ -1,5 +1,6 @@
 import { DiscoveredEvent, PerplexityEventData } from '@/types/event';
 import { callOpenRouterAPI, extractContent, OpenRouterError } from './perplexity-api';
+import { fetchMultipleUnsplashImages } from './unsplash-api';
 
 /**
  * Generate a unique ID for an event
@@ -90,7 +91,7 @@ function extractTimeFromISO(isoDateTime: string): string {
 /**
  * Transform Perplexity event data to DiscoveredEvent
  */
-function transformToDiscoveredEvent(data: PerplexityEventData): DiscoveredEvent {
+function transformToDiscoveredEvent(data: PerplexityEventData, imageUrl?: string | null): DiscoveredEvent {
   const { image, imageKey } = getRandomEventImage();
 
   // Construct location string
@@ -112,6 +113,7 @@ function transformToDiscoveredEvent(data: PerplexityEventData): DiscoveredEvent 
     aiOverview: data.ai_overview.trim(),
     image,
     imageKey,
+    imageUrl: imageUrl || undefined, // Use Unsplash URL if available
     venue: data.address.venue?.trim(),
     link: data.link,
     sourceUrls: data.source_urls,
@@ -157,7 +159,8 @@ JSON SCHEMA:
             "address",
             "ai_overview",
             "link",
-            "source_urls"
+            "source_urls",
+            "unsplash_image_keyword"
           ],
           "properties": {
             "name": { "type": "string" },
@@ -208,6 +211,10 @@ JSON SCHEMA:
                 }
               },
               "description": "Exactly 3 Q&A pairs: 'Who is this for?', 'Why does it matter?', 'What should I expect?'"
+            },
+            "unsplash_image_keyword": {
+              "type": "string",
+              "description": "Single descriptive keyword for Unsplash image search. Use hyphenated terms like 'town-hall', 'political-rally', 'civic-meeting', 'community-gathering', 'protest-march', 'voter-registration', 'city-council', 'school-board'. Choose keywords that best represent the event type and will return relevant civic/political imagery."
             }
           }
         }
@@ -233,7 +240,8 @@ Inclusion rules:
 - Max 10 items.
 
 Output:
-- cards[] with name, date, time.start, time.end if known, address{venue,street,city,state,postal_code,country}, location{lat,lon} if present, ai_overview, link, source_urls[], organizer, website_link, impact_statement (1-2 sentences), qa_pairs[] with exactly 3 items answering: 'Who is this for?', 'Why does it matter?', 'What should I expect?'.
+- cards[] with name, date, time.start, time.end if known, address{venue,street,city,state,postal_code,country}, location{lat,lon} if present, ai_overview, link, source_urls[], organizer, website_link, impact_statement (1-2 sentences), qa_pairs[] with exactly 3 items answering: 'Who is this for?', 'Why does it matter?', 'What should I expect?', and unsplash_image_keyword (single keyword like 'town-hall' or 'political-rally').
+- For unsplash_image_keyword: Choose descriptive, hyphenated keywords that will fetch relevant civic/political images from Unsplash. Examples: 'town-hall', 'city-council', 'political-rally', 'community-meeting', 'protest-march', 'voter-registration', 'school-board', 'civic-engagement'.
 - Do not include any text outside the JSON.`;
 }
 
@@ -373,10 +381,19 @@ export async function generateEventsForLocation(
       return [];
     }
 
-    // Transform to DiscoveredEvent format
-    const discoveredEvents = perplexityEvents.map(transformToDiscoveredEvent);
+    // Fetch Unsplash images for all events in parallel
+    console.log('[EventGeneration] Fetching Unsplash images...');
+    const keywords = perplexityEvents.map(event => event.unsplash_image_keyword || 'civic-event');
+    const imageUrls = await fetchMultipleUnsplashImages(keywords);
+    console.log('[EventGeneration] Fetched Unsplash images:', imageUrls);
 
-    console.log(`[EventGeneration] Successfully generated ${discoveredEvents.length} events`);
+    // Transform to DiscoveredEvent format with Unsplash URLs
+    const discoveredEvents = perplexityEvents.map((event, index) => {
+      const imageUrl = imageUrls[index];
+      return transformToDiscoveredEvent(event, imageUrl);
+    });
+
+    console.log(`[EventGeneration] Successfully generated ${discoveredEvents.length} events with images`);
 
     return discoveredEvents;
 

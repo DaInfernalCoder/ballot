@@ -22,6 +22,8 @@ module.exports = {
       infoPlist: {
         NSLocationWhenInUseUsageDescription:
           'Ballot uses your location to show you relevant local political events and civic activities in your area.',
+        NSUserNotificationsUsageDescription:
+          'Ballot sends you reminders about upcoming civic events you have saved.',
       },
     },
     android: {
@@ -32,14 +34,30 @@ module.exports = {
       package: 'com.ballot.app',
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
-      permissions: ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION'],
+      permissions: [
+        'ACCESS_COARSE_LOCATION',
+        'ACCESS_FINE_LOCATION',
+        'POST_NOTIFICATIONS',
+        'RECEIVE_BOOT_COMPLETED',
+        'VIBRATE',
+      ],
     },
     web: {
       bundler: 'metro',
       output: 'static',
       favicon: './assets/images/favicon.png',
     },
-    plugins: ['expo-router'],
+    plugins: [
+      'expo-router',
+      [
+        'expo-notifications',
+        {
+          icon: './assets/images/icon.png',
+          color: '#7876FD',
+          sounds: ['default'],
+        },
+      ],
+    ],
     experiments: {
       typedRoutes: true,
     },
@@ -48,6 +66,7 @@ module.exports = {
       OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
       SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
       SUPABASE_KEY: process.env.EXPO_PUBLIC_SUPABASE_KEY,
+      UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
     },
   },
 };

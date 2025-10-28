@@ -1,6 +1,7 @@
 import { SavedEvent } from '@/types/event';
 import { getImageFromKey } from '@/utils/image-mapping';
 import { loadSavedEvents, saveSavedEvents, SerializedEvent } from '@/utils/storage';
+import { cancelNotification, scheduleEventNotification } from '@/utils/notifications';
 import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
 
 interface EventsState {
@@ -15,8 +16,8 @@ type EventsAction =
   | { type: 'SET_LOADING'; payload: boolean };
 
 interface EventsContextValue extends EventsState {
-  addSavedEvent: (event: SavedEvent) => void;
-  removeSavedEventById: (id: string) => void;
+  addSavedEvent: (event: SavedEvent) => Promise<void>;
+  removeSavedEventById: (id: string) => Promise<void>;
   hasSavedEvent: (id: string) => boolean;
 }
 
@@ -63,9 +64,19 @@ function serializeEvent(event: SavedEvent): SerializedEvent {
     location: event.location,
     date: event.date,
     imageKey: event.imageKey,
+    imageUrl: event.imageUrl,
     address: event.address,
     time: event.time,
     aiOverview: event.aiOverview,
+    link: event.link,
+    sourceUrls: event.sourceUrls,
+    tags: event.tags,
+    venue: event.venue,
+    organizer: event.organizer,
+    websiteLink: event.websiteLink,
+    impactStatement: event.impactStatement,
+    qaPairs: event.qaPairs,
+    notificationId: event.notificationId,
   };
 }
 
@@ -76,6 +87,19 @@ function deserializeEvent(serialized: SerializedEvent): SavedEvent {
   return {
     ...serialized,
     image: getImageFromKey(serialized.imageKey),
+    imageUrl: serialized.imageUrl,
+    address: serialized.address,
+    time: serialized.time,
+    aiOverview: serialized.aiOverview,
+    link: serialized.link,
+    sourceUrls: serialized.sourceUrls,
+    tags: serialized.tags,
+    venue: serialized.venue,
+    organizer: serialized.organizer,
+    websiteLink: serialized.websiteLink,
+    impactStatement: serialized.impactStatement,
+    qaPairs: serialized.qaPairs,
+    notificationId: serialized.notificationId,
   };
 }
 
@@ -117,15 +141,34 @@ export function EventsProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<EventsContextValue>(() => ({
     savedEvents: state.savedEvents,
     isLoading: state.isLoading,
-    addSavedEvent: (event: SavedEvent) => {
-      dispatch({ type: 'ADD_SAVED_EVENT', payload: event });
+    addSavedEvent: async (event: SavedEvent) => {
+      // Schedule notification for this event
+      const notificationId = await scheduleEventNotification(event);
+
+      // Add notification ID to event if scheduled
+      const eventWithNotification: SavedEvent = {
+        ...event,
+        notificationId: notificationId || undefined,
+      };
+
+      dispatch({ type: 'ADD_SAVED_EVENT', payload: eventWithNotification });
+
       // Persist after state update
       setTimeout(() => {
-        persistEvents([event, ...state.savedEvents.filter(e => e.id !== event.id)]);
+        persistEvents([eventWithNotification, ...state.savedEvents.filter(e => e.id !== event.id)]);
       }, 0);
     },
-    removeSavedEventById: (id: string) => {
+    removeSavedEventById: async (id: string) => {
+      // Find the event to get its notification ID
+      const event = state.savedEvents.find(e => e.id === id);
+
+      // Cancel notification if it exists
+      if (event?.notificationId) {
+        await cancelNotification(event.notificationId);
+      }
+
       dispatch({ type: 'REMOVE_SAVED_EVENT', payload: { id } });
+
       // Persist after state update
       setTimeout(() => {
         persistEvents(state.savedEvents.filter(e => e.id !== id));

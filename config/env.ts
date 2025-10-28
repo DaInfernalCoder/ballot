@@ -14,6 +14,7 @@ interface EnvConfig {
   OPENROUTER_API_KEY: string;
   SUPABASE_URL: string;
   SUPABASE_KEY: string;
+  UNSPLASH_ACCESS_KEY: string;
 }
 
 /**
@@ -35,6 +36,9 @@ function getEnvConfig(): EnvConfig {
   const supabaseKey = extra.SUPABASE_KEY ||
                      process.env.EXPO_PUBLIC_SUPABASE_KEY ||
                      '';
+  const unsplashKey = extra.UNSPLASH_ACCESS_KEY ||
+                     process.env.UNSPLASH_ACCESS_KEY ||
+                     '';
 
   // Validate required variables
   if (!openRouterKey) {
@@ -44,10 +48,18 @@ function getEnvConfig(): EnvConfig {
     );
   }
 
+  if (!unsplashKey) {
+    console.warn(
+      '[ENV] UNSPLASH_ACCESS_KEY not found. ' +
+      'Make sure .env.local exists and restart the dev server with: npm start --clear'
+    );
+  }
+
   return {
     OPENROUTER_API_KEY: openRouterKey,
     SUPABASE_URL: supabaseUrl,
     SUPABASE_KEY: supabaseKey,
+    UNSPLASH_ACCESS_KEY: unsplashKey,
   };
 }
 

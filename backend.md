@@ -66,18 +66,17 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
 - [ ] Cache detailed view data per event to avoid regenerating
 
 ### 4. Image Integration
-- [ ] Set up Unsplash API integration for event images
-- [ ] Implement fallback curated images for common event types
-- [ ] Add image caching and optimization for mobile
-- [ ] Create image URL validation and error handling
-- [ ] Implement progressive loading with placeholders
+- [x] Set up Unsplash API integration for event images
+- [ ] Implement 15 fallback curated images for common event types
+- [ ] Create image URL validation and error handling, if image api doesn't return an image, use the fallback image
+- [x] Implement progressive loading, the loader that was initally for the perplexity response should now also include the images loading
 
 ## Phase 2: Database & Cloud Services
 
 ### 5. Push Notifications
-- [ ] Install expo-notifications package
-- [ ] Configure notification permissions and settings in app.json
-- [ ] Implement local notification scheduling for saved events
+- [x] Install expo-notifications package
+- [x] Configure notification permissions and settings in app.json
+- [x] Implement local notification scheduling for saved events
 - [ ] Add reminder preference options (1 hour, 1 day, 1 week before)
 - [ ] Create notification tap handling to navigate to events
 - [ ] Add notification management (cancel, update) for removed events
@@ -102,14 +101,14 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
 - [ ] Any additional utility packages for API handling
 
 ### Environment Variables
-- [ ] `PERPLEXITY_API_KEY` - For AI content generation
-- [ ] `EXPO_PUBLIC_SUPABASE_URL` - Supabase project URL
-- [ ] `EXPO_PUBLIC_SUPABASE_KEY` - Supabase public key
-- [ ] `UNSPLASH_ACCESS_KEY` - For event images (optional)
+- [x] `PERPLEXITY_API_KEY` - For AI content generation
+- [x] `EXPO_PUBLIC_SUPABASE_URL` - Supabase project URL
+- [x] `EXPO_PUBLIC_SUPABASE_KEY` - Supabase public key
+- [x] `UNSPLASH_ACCESS_KEY` - For event images (optional)
 
 ### API Services Setup
-- [ ] Perplexity AI API access and key configuration
-- [ ] Unsplash API access for images
+- [x] Perplexity AI API access and key configuration
+- [x] Unsplash API access for images
 - [ ] Supabase project creation and configuration
 - [ ] Test API connections and rate limits
 
@@ -118,8 +117,8 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
 ### Functional Requirements
 - [x] Users can save events that persist across app restarts
 - [x] Location detection works and filters events appropriately
-- [ ] AI generates relevant civic events with accurate details
-- [ ] Images load reliably and are contextually appropriate
-- [ ] Push notifications work for saved events
-- [ ] App functions offline with cached data
+- [x] AI generates relevant civic events with accurate details
+- [x] Images load reliably and are contextually appropriate
+- [x] Push notifications work for saved events
+- [x] App functions offline with cached data
 

@@ -1,9 +1,12 @@
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
+import SavedEventDetailsModal from '@/components/SavedEventDetailsModal';
 import SwipeableEventCard from '@/components/SwipeableEventCard';
 import { Text, View } from '@/components/Themed';
 import { useEvents } from '@/contexts/events-context';
+import { SavedEvent } from '@/types/event';
+import { triggerTestNotification } from '@/utils/notifications';
 import { useState } from 'react';
-import { Image, View as RNView, ScrollView, StatusBar, StyleSheet, TouchableOpacity } from 'react-native';
+import { Alert, Image, View as RNView, ScrollView, StatusBar, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 export default function EventsScreen() {
@@ -17,6 +20,13 @@ export default function EventsScreen() {
     eventId: null,
     eventName: '',
   });
+  const [detailsModal, setDetailsModal] = useState<{
+    visible: boolean;
+    event: SavedEvent | null;
+  }>({
+    visible: false,
+    event: null,
+  });
 
   const handleDeletePress = (eventId: string, eventName: string) => {
     setConfirmModal({ visible: true, eventId, eventName });
@@ -28,6 +38,23 @@ export default function EventsScreen() {
   };
 
   const handleCancelDelete = () => setConfirmModal({ visible: false, eventId: null, eventName: '' });
+
+  const handleEventPress = (event: SavedEvent) => {
+    setDetailsModal({ visible: true, event });
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsModal({ visible: false, event: null });
+  };
+
+  const handleTestNotification = async (event: SavedEvent) => {
+    try {
+      await triggerTestNotification(event);
+      Alert.alert('Test Notification Sent', 'Check your notifications!');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send test notification. Make sure notifications are enabled.');
+    }
+  };
 
   const hasAny = savedEvents.length > 0;
 
@@ -59,25 +86,45 @@ export default function EventsScreen() {
                   onDelete={() => removeSavedEventById(event.id)}
                   onDeletePress={() => handleDeletePress(event.id, event.title)}
                 >
-                  <TouchableOpacity style={styles.eventCard}>
-                    <Image source={event.image} style={styles.eventImage} resizeMode="cover" />
+                  <RNView style={styles.eventRow}>
+                    {/* Notification Bell Button */}
+                    <TouchableOpacity
+                      style={styles.notificationButton}
+                      onPress={() => handleTestNotification(event)}
+                      activeOpacity={0.7}
+                    >
+                      <BellIcon />
+                    </TouchableOpacity>
 
-                    <RNView style={styles.eventDetails}>
-                      <Text style={styles.eventName}>{event.title}</Text>
+                    {/* Event Card */}
+                    <TouchableOpacity
+                      style={styles.eventCard}
+                      onPress={() => handleEventPress(event)}
+                      activeOpacity={0.7}
+                    >
+                      <Image
+                        source={event.imageUrl ? { uri: event.imageUrl } : event.image}
+                        style={styles.eventImage}
+                        resizeMode="cover"
+                      />
 
-                      <RNView style={styles.eventMeta}>
-                        <RNView style={styles.metaRow}>
-                          <LocationIcon />
-                          <Text style={styles.metaText}>{event.location}</Text>
-                        </RNView>
+                      <RNView style={styles.eventDetails}>
+                        <Text style={styles.eventName}>{event.title}</Text>
 
-                        <RNView style={styles.metaRow}>
-                          <CalendarIcon />
-                          <Text style={styles.metaText}>{event.date}</Text>
+                        <RNView style={styles.eventMeta}>
+                          <RNView style={styles.metaRow}>
+                            <LocationIcon />
+                            <Text style={styles.metaText}>{event.location}</Text>
+                          </RNView>
+
+                          <RNView style={styles.metaRow}>
+                            <CalendarIcon />
+                            <Text style={styles.metaText}>{event.date}</Text>
+                          </RNView>
                         </RNView>
                       </RNView>
-                    </RNView>
-                  </TouchableOpacity>
+                    </TouchableOpacity>
+                  </RNView>
                 </SwipeableEventCard>
               ))}
             </View>
@@ -91,6 +138,13 @@ export default function EventsScreen() {
         eventName={confirmModal.eventName}
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
+      />
+
+      {/* Event Details Modal */}
+      <SavedEventDetailsModal
+        visible={detailsModal.visible}
+        event={detailsModal.event}
+        onClose={handleCloseDetails}
       />
     </View>
   );
@@ -111,6 +165,18 @@ const CalendarIcon = () => (
     <Path
       d="M12.667 2.667h-1.334V2a.667.667 0 00-1.333 0v.667H6V2a.667.667 0 00-1.333 0v.667H3.333A1.333 1.333 0 002 4v9.333A1.333 1.333 0 003.333 14.667h9.334A1.333 1.333 0 0014 13.333V4a1.333 1.333 0 00-1.333-1.333zm0 10.666H3.333V6.667h9.334v6.666z"
       fill="white"
+    />
+  </Svg>
+);
+
+const BellIcon = () => (
+  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M18 8A6 6 0 1 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"
+      stroke="white"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
     />
   </Svg>
 );
@@ -157,7 +223,22 @@ const styles = StyleSheet.create({
   eventContainer: {
     // Gap removed - handled by SwipeableEventCard marginBottom
   },
+  eventRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  notificationButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(120, 118, 253, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
   eventCard: {
+    flex: 1,
     flexDirection: 'row',
     backgroundColor: '#151515',
     borderRadius: 15,

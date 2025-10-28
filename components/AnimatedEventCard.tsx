@@ -74,6 +74,7 @@ export default function AnimatedEventCard({
         time={event.time}
         image={event.image}
         imageKey={event.imageKey}
+        imageUrl={event.imageUrl}
         aiOverview={event.aiOverview}
         link={event.link}
         sourceUrls={event.sourceUrls}
