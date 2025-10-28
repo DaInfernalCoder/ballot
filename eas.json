@@ -1,0 +1,49 @@
+{
+  "cli": {
+    "version": ">= 15.2.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "bundleIdentifier": "com.ballot.app"
+      },
+      "android": {
+        "buildType": "apk",
+        "package": "com.ballot.app"
+      }
+    },
+    "production": {
+      "ios": {
+        "bundleIdentifier": "com.ballot.app",
+        "autoIncrement": true
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "package": "com.ballot.app"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "your-app-store-connect-app-id",
+        "appleTeamId": "your-apple-team-id"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./path-to-service-account-key.json",
+        "track": "production"
+      }
+    }
+  }
+}
+

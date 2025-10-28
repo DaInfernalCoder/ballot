@@ -1,11 +1,14 @@
+import CustomScrollbar from '@/components/CustomScrollbar';
 import FlippableCard from '@/components/FlippableCard';
 import SwipeActionCard from '@/components/SwipeActionCard';
 import { Text, View } from '@/components/Themed';
 import { useEvents } from '@/contexts/events-context';
 import { SavedEvent } from '@/types/event';
 import { Image } from 'expo-image';
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedScrollHandler, useSharedValue, scrollTo } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
 interface HomeEventCardProps extends SavedEvent {
@@ -71,8 +74,29 @@ export function HomeEventCard({
 }: HomeEventCardProps) {
   const { addSavedEvent } = useEvents();
 
+  // Scroll tracking for custom scrollbar
+  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollY = useSharedValue(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
+
+  // Animated scroll handler
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  // Function to scroll to a specific position (called by CustomScrollbar)
+  const handleScrollTo = (y: number) => {
+    scrollViewRef.current?.scrollTo({ y, animated: false });
+  };
+
   // Prioritize Unsplash URL over local image
   const imageSource = imageUrl ? { uri: imageUrl } : image;
+
+  // Create a native gesture for the ScrollView to block VirtualizedList's paging gesture
+  const scrollViewGesture = Gesture.Native().enabled(flipped);
 
   const cardContent = (
     <FlippableCard
@@ -115,91 +139,109 @@ export function HomeEventCard({
           </>
         }
         back={
-          <View style={styles.backFaceContainer}>
-            <ScrollView
-              style={styles.scrollView}
-              contentContainerStyle={styles.scrollViewContent}
-              showsVerticalScrollIndicator={false}
-              bounces={true}
-              nestedScrollEnabled={true}
-              directionalLockEnabled={true}
-            >
-              <View style={styles.eventContent}>
-                <Text style={styles.backTitle}>{title}</Text>
+          <GestureDetector gesture={scrollViewGesture}>
+            <View style={styles.backFaceContainer}>
+              <Animated.ScrollView
+                ref={scrollViewRef}
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollViewContent}
+                showsVerticalScrollIndicator={false}
+                bounces={true}
+                onScroll={scrollHandler}
+                scrollEventThrottle={16}
+                onLayout={(event) => {
+                  setScrollViewHeight(event.nativeEvent.layout.height);
+                }}
+                onContentSizeChange={(_, height) => {
+                  setContentHeight(height);
+                }}
+              >
+                <View style={styles.eventContent}>
+                  <Text style={styles.backTitle}>{title}</Text>
 
-                {/* Top Section - Event Details */}
-                <View style={styles.detailsSection}>
-                  {venue && (
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Venue</Text>
-                      <Text style={styles.detailValue}>{venue}</Text>
-                    </View>
-                  )}
-
-                  {address && (
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Address</Text>
-                      <View style={styles.addressRow}>
-                        <Text style={[styles.detailValue, styles.addressText]}>{address}</Text>
-                        <LocationIcon />
+                  {/* Top Section - Event Details */}
+                  <View style={styles.detailsSection}>
+                    {venue && (
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>Venue</Text>
+                        <Text style={styles.detailValue}>{venue}</Text>
                       </View>
-                    </View>
-                  )}
+                    )}
 
-                  {organizer && (
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Organizer</Text>
-                      <Text style={styles.detailValue}>{organizer}</Text>
-                    </View>
-                  )}
+                    {address && (
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>Address</Text>
+                        <View style={styles.addressRow}>
+                          <Text style={[styles.detailValue, styles.addressText]}>{address}</Text>
+                          <LocationIcon />
+                        </View>
+                      </View>
+                    )}
 
-                  {websiteLink && (
-                    <View style={styles.detailItem}>
-                      <Text style={styles.detailLabel}>Website</Text>
-                      <Text style={[styles.detailValue, styles.linkText]} numberOfLines={1}>
-                        {websiteLink}
+                    {organizer && (
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>Organizer</Text>
+                        <Text style={styles.detailValue}>{organizer}</Text>
+                      </View>
+                    )}
+
+                    {websiteLink && (
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>Website</Text>
+                        <Text style={[styles.detailValue, styles.linkText]} numberOfLines={1}>
+                          {websiteLink}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Bottom Section - Impact & Q&A */}
+                  {(impactStatement || aiOverview) && (
+                    <View style={styles.impactSection}>
+                      <Text style={styles.impactHeading}>Impact of This Event</Text>
+                      <Text style={styles.impactText}>
+                        {impactStatement || aiOverview}
                       </Text>
                     </View>
                   )}
+
+                  {qaPairs && qaPairs.length > 0 && (
+                    <View style={styles.qaSection}>
+                      {qaPairs.map((qa, index) => (
+                        <View key={index} style={styles.qaItem}>
+                          <Text style={styles.qaQuestion}>{qa.question}</Text>
+                          <Text style={styles.qaAnswer}>{qa.answer}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
+              </Animated.ScrollView>
 
-                {/* Bottom Section - Impact & Q&A */}
-                {(impactStatement || aiOverview) && (
-                  <View style={styles.impactSection}>
-                    <Text style={styles.impactHeading}>Impact of This Event</Text>
-                    <Text style={styles.impactText}>
-                      {impactStatement || aiOverview}
-                    </Text>
-                  </View>
-                )}
+              {/* Custom Scrollbar */}
+              <CustomScrollbar
+                scrollY={scrollY}
+                contentHeight={contentHeight}
+                scrollViewHeight={scrollViewHeight}
+                onScrollTo={handleScrollTo}
+              />
 
-                {qaPairs && qaPairs.length > 0 && (
-                  <View style={styles.qaSection}>
-                    {qaPairs.map((qa, index) => (
-                      <View key={index} style={styles.qaItem}>
-                        <Text style={styles.qaQuestion}>{qa.question}</Text>
-                        <Text style={styles.qaAnswer}>{qa.answer}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
+              {/* Close Details button at bottom */}
+              <View style={styles.backButtonContainer}>
+                <TouchableOpacity style={styles.closeDetailsButton} onPress={onUnflip}>
+                  <Text style={styles.closeDetailsText}>Close Details</Text>
+                </TouchableOpacity>
               </View>
-            </ScrollView>
-
-            {/* Close Details button at bottom */}
-            <View style={styles.backButtonContainer}>
-              <TouchableOpacity style={styles.closeDetailsButton} onPress={onUnflip}>
-                <Text style={styles.closeDetailsText}>Close Details</Text>
-              </TouchableOpacity>
             </View>
-          </View>
+          </GestureDetector>
         }
       />
   );
 
-  // Use SwipeActionCard for horizontal swipe gestures
+  // Use SwipeActionCard for horizontal swipe gestures (disable when flipped)
   return (
     <SwipeActionCard
+      enabled={!flipped}
       onSwipeRight={() => {
         addSavedEvent({
           id,

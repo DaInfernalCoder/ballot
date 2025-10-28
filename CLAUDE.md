@@ -23,6 +23,70 @@ npm run android    # Android emulator
 npm run web        # Web browser
 ```
 
+## Deployment & Publishing
+
+### Web Deployment (EAS Hosting)
+
+The app is configured with **server-side export** for web deployment (supports server functions and API routes).
+
+```bash
+# Export web app to dist/ directory (run before every deploy)
+npx expo export --platform web
+
+# Deploy to EAS Hosting
+eas deploy
+```
+
+**Configuration**: `app.config.js` has `expo.web.output: "server"` for full server-side capabilities.
+
+### iOS Build & Submit
+
+The app is configured for iOS publishing with EAS Build.
+
+```bash
+# Build for iOS production
+eas build --platform ios --profile production
+
+# Submit to App Store (after build completes)
+eas submit --platform ios --profile production
+```
+
+**Build Profiles** (defined in `eas.json`):
+- `development`: Development client with simulator support
+- `preview`: Internal distribution for TestFlight
+- `production`: App Store production builds with auto-increment
+
+**Before first iOS submission**, update `eas.json` with:
+- `appleId`: Your Apple ID email
+- `ascAppId`: App Store Connect app ID
+- `appleTeamId`: Your Apple Developer Team ID
+
+**Bundle Identifier**: `com.ballot.app` (set in both `app.config.js` and `eas.json`)
+
+### Android Build & Submit
+
+```bash
+# Build for Android production
+eas build --platform android --profile production
+
+# Submit to Google Play Store
+eas submit --platform android --profile production
+```
+
+**Before first Android submission**, add Google Play service account key to `eas.json`:
+- Generate service account JSON from Google Play Console
+- Update `serviceAccountKeyPath` in `eas.json`
+
+**Package Name**: `com.ballot.app`
+
+### Build Workflow
+
+1. **Development**: Use `eas build --profile development` for testing with development client
+2. **Preview**: Use `eas build --profile preview` for internal testing (TestFlight/Internal tracks)
+3. **Production**: Use `eas build --profile production` for App Store/Google Play submission
+
+**Important**: Always run `npx expo export --platform web` before deploying web changes.
+
 ## Tech Stack
 
 - **Framework**: React Native 0.81.5 with Expo ~54.0.18
@@ -153,11 +217,21 @@ The back of each card features:
 - **Scrollable content**: Event details (venue, address, organizer, website) and AI-generated impact statement
 - **Custom always-visible scrollbar**: iOS-style thin scrollbar (4px) with draggable thumb on the right side (`components/CustomScrollbar.tsx`)
   - Built with Reanimated v4 Gesture API + Gesture Handler for smooth 60fps performance
-  - Thumb size adapts to content ratio, always visible when content is scrollable, user can drag to scroll
+  - Thumb size adapts to content ratio, auto-hides when content fits without scrolling
+  - User can drag the thumb to scroll, with smooth spring animations on interaction
   - Minimum thumb height: 50px, semi-transparent white (60% opacity with subtle shadow)
+  - Scales up 1.2x and increases opacity to 80% when dragging for visual feedback
+  - Used in both `HomeEventCard` (back face) and `SavedEventDetailsModal` for consistency
 - **Fixed bottom button**: "Close Details" button styled identically to "View Details" on front
 - **Nested scroll behavior**: When scrolled to top/bottom edges, vertical swipes pass through to parent VirtualizedList for card navigation
 - **Gesture coordination**: Horizontal swipes (add/delete) work independently of vertical scrolling and scrollbar dragging
+
+**Custom Scrollbar Implementation**:
+- Track scroll position via `useAnimatedScrollHandler` on Animated.ScrollView
+- Calculate thumb position: `interpolate(scrollY, [0, scrollableHeight], [0, maxThumbY])`
+- Calculate thumb size: `max(50px, (viewportHeight / contentHeight) * trackHeight)`
+- Pan gesture converts thumb drag delta to scroll position via `scrollRatio = scrollableHeight / maxThumbY`
+- All hooks called before conditional returns to satisfy React's rules of hooks
 
 ### List View
 
@@ -472,6 +546,17 @@ const discovered: DiscoveredEvent = {
 ### tsconfig.json
 - Path alias: `@/*` maps to project root
 - Use `@/` for all imports to components, contexts, constants
+
+### eas.json
+- Defines build profiles for development, preview, and production
+- Contains iOS/Android package identifiers (`com.ballot.app`)
+- Before first submission, update Apple IDs and service account keys
+- `autoIncrement: true` for iOS builds (automatic build number increment)
+
+### app.config.js
+- `expo.web.output: "server"` - Server-side export for web (supports API routes)
+- Environment variables exposed via `extra` field
+- Loads `.env.local` via dotenv at build time
 
 ## Code Style Conventions
 

@@ -96,7 +96,7 @@ Transform the static MVP into a dynamic, location-aware civic event discovery pl
 ### Required Packages
 - [x] `@react-native-async-storage/async-storage`
 - [x] `expo-location`
-- [] `expo-notifications`
+- [x] `expo-notifications`
 - [ ] `@supabase/supabase-js`
 - [ ] Any additional utility packages for API handling
 

@@ -2,13 +2,13 @@ import React from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  interpolate,
-  runOnJS,
-  useAnimatedStyle,
-  useDerivedValue,
-  useSharedValue,
-  withSpring,
-  withTiming,
+    interpolate,
+    runOnJS,
+    useAnimatedStyle,
+    useDerivedValue,
+    useSharedValue,
+    withSpring,
+    withTiming,
 } from 'react-native-reanimated';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -18,9 +18,10 @@ interface SwipeActionCardProps {
   children: React.ReactNode;
   onSwipeRight?: () => void; // Add to events
   onSwipeLeft?: () => void;  // Delete/dismiss
+  enabled?: boolean;         // Enable/disable swipe gesture
 }
 
-export function SwipeActionCard({ children, onSwipeRight, onSwipeLeft }: SwipeActionCardProps) {
+export function SwipeActionCard({ children, onSwipeRight, onSwipeLeft, enabled = true }: SwipeActionCardProps) {
   const translateX = useSharedValue(0);
   const startX = useSharedValue(0);
   const isCommitting = useSharedValue(false);
@@ -58,6 +59,7 @@ export function SwipeActionCard({ children, onSwipeRight, onSwipeLeft }: SwipeAc
   }));
 
   const gesture = Gesture.Pan()
+    .enabled(enabled)
     .activeOffsetX([-16, 16])
     .failOffsetY([-20, 20])
     .enableTrackpadTwoFingerGesture(false)

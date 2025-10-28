@@ -1,8 +1,9 @@
+import CustomScrollbar from '@/components/CustomScrollbar';
 import FlippableCard from '@/components/FlippableCard';
 import { Text, View } from '@/components/Themed';
 import { SavedEvent } from '@/types/event';
 import { Image } from 'expo-image';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Modal,
@@ -11,6 +12,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
 } from 'react-native';
+import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -45,6 +47,24 @@ export default function SavedEventDetailsModal({
   onClose,
 }: SavedEventDetailsModalProps) {
   const [flipped, setFlipped] = useState(false);
+
+  // Scroll tracking for custom scrollbar
+  const scrollViewRef = useRef<ScrollView>(null);
+  const scrollY = useSharedValue(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const [scrollViewHeight, setScrollViewHeight] = useState(0);
+
+  // Animated scroll handler
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  // Function to scroll to a specific position (called by CustomScrollbar)
+  const handleScrollTo = (y: number) => {
+    scrollViewRef.current?.scrollTo({ y, animated: false });
+  };
 
   // Auto-flip to back when modal opens
   useEffect(() => {
@@ -104,13 +124,22 @@ export default function SavedEventDetailsModal({
                 }
                 back={
                   <View style={styles.backFaceContainer}>
-                    <ScrollView
+                    <Animated.ScrollView
+                      ref={scrollViewRef}
                       style={styles.scrollView}
                       contentContainerStyle={styles.scrollViewContent}
                       showsVerticalScrollIndicator={false}
                       bounces={true}
                       nestedScrollEnabled={true}
                       directionalLockEnabled={true}
+                      onScroll={scrollHandler}
+                      scrollEventThrottle={16}
+                      onLayout={(event) => {
+                        setScrollViewHeight(event.nativeEvent.layout.height);
+                      }}
+                      onContentSizeChange={(_, height) => {
+                        setContentHeight(height);
+                      }}
                     >
                       <View style={styles.eventContent}>
                         <Text style={styles.backTitle}>{event.title}</Text>
@@ -177,7 +206,15 @@ export default function SavedEventDetailsModal({
                           </View>
                         )}
                       </View>
-                    </ScrollView>
+                    </Animated.ScrollView>
+
+                    {/* Custom Scrollbar */}
+                    <CustomScrollbar
+                      scrollY={scrollY}
+                      contentHeight={contentHeight}
+                      scrollViewHeight={scrollViewHeight}
+                      onScrollTo={handleScrollTo}
+                    />
 
                     {/* Close Details button at bottom */}
                     <View style={styles.backButtonContainer}>
