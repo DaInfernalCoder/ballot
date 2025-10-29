@@ -119,14 +119,14 @@ export default function HomeScreen() {
 
   // Show streaming text when new events are loaded
   useEffect(() => {
-    if (location.currentLocation && EVENTS_LENGTH > 0 && !discoveryEvents.isLoading && !discoveryEvents.cacheHit) {
+    if (location.currentLocation && discoveryEvents.discoveredEvents.length > 0 && !discoveryEvents.isLoading && !discoveryEvents.cacheHit) {
       setShowStreamingText(true);
       const timer = setTimeout(() => {
         setShowStreamingText(false);
       }, 3000); // Show for 3 seconds
       return () => clearTimeout(timer);
     }
-  }, [EVENTS_LENGTH, discoveryEvents.isLoading, discoveryEvents.cacheHit, location.currentLocation]);
+  }, [discoveryEvents.discoveredEvents.length, discoveryEvents.isLoading, discoveryEvents.cacheHit, location.currentLocation]);
 
   // Animate expansion when isExpanded changes
   useEffect(() => {

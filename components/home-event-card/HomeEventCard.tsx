@@ -8,7 +8,7 @@ import { Image } from 'expo-image';
 import React, { useRef, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedScrollHandler, useSharedValue, scrollTo } from 'react-native-reanimated';
+import Animated, { useAnimatedScrollHandler, useSharedValue } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
 interface HomeEventCardProps extends SavedEvent {
@@ -74,20 +74,38 @@ export function HomeEventCard({
 }: HomeEventCardProps) {
   const { addSavedEvent } = useEvents();
 
-  // Scroll tracking for custom scrollbar
+  // Scroll tracking for front face
+  const frontScrollViewRef = useRef<ScrollView>(null);
+  const frontScrollY = useSharedValue(0);
+  const [frontContentHeight, setFrontContentHeight] = useState(0);
+  const [frontScrollViewHeight, setFrontScrollViewHeight] = useState(0);
+
+  // Scroll tracking for back face
   const scrollViewRef = useRef<ScrollView>(null);
   const scrollY = useSharedValue(0);
   const [contentHeight, setContentHeight] = useState(0);
   const [scrollViewHeight, setScrollViewHeight] = useState(0);
 
-  // Animated scroll handler
+  // Animated scroll handler for front face
+  const frontScrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      frontScrollY.value = event.contentOffset.y;
+    },
+  });
+
+  // Animated scroll handler for back face
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
       scrollY.value = event.contentOffset.y;
     },
   });
 
-  // Function to scroll to a specific position (called by CustomScrollbar)
+  // Function to scroll to a specific position (front face)
+  const handleFrontScrollTo = (y: number) => {
+    frontScrollViewRef.current?.scrollTo({ y, animated: false });
+  };
+
+  // Function to scroll to a specific position (back face)
   const handleScrollTo = (y: number) => {
     scrollViewRef.current?.scrollTo({ y, animated: false });
   };
@@ -95,8 +113,9 @@ export function HomeEventCard({
   // Prioritize Unsplash URL over local image
   const imageSource = imageUrl ? { uri: imageUrl } : image;
 
-  // Create a native gesture for the ScrollView to block VirtualizedList's paging gesture
-  const scrollViewGesture = Gesture.Native().enabled(flipped);
+  // Create native gestures for ScrollViews to coordinate with VirtualizedList
+  const frontScrollViewGesture = Gesture.Native().enabled(!flipped);
+  const backScrollViewGesture = Gesture.Native().enabled(flipped);
 
   const cardContent = (
     <FlippableCard
@@ -106,40 +125,66 @@ export function HomeEventCard({
       ]}
       flipped={flipped}
       front={
-          <>
-            <Image
-              source={imageSource}
-              style={styles.eventImage}
-              contentFit="cover"
-              transition={200}
-              allowDownscaling
-              placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
-            />
-            <View style={styles.eventContent}>
-              <Text style={styles.eventTitle}>{title}</Text>
-              <View style={styles.eventDetails}>
-                <View style={styles.detailRow}>
-                  <LocationIcon />
-                  <Text style={styles.detailText}>{location}</Text>
+          <GestureDetector gesture={frontScrollViewGesture}>
+            <View style={styles.frontFaceContainer}>
+              <Animated.ScrollView
+                ref={frontScrollViewRef}
+                style={styles.frontScrollView}
+                contentContainerStyle={styles.frontScrollViewContent}
+                showsVerticalScrollIndicator={false}
+                bounces={true}
+                onScroll={frontScrollHandler}
+                scrollEventThrottle={16}
+                onLayout={(event) => {
+                  setFrontScrollViewHeight(event.nativeEvent.layout.height);
+                }}
+                onContentSizeChange={(_, height) => {
+                  setFrontContentHeight(height);
+                }}
+              >
+                <Image
+                  source={imageSource}
+                  style={styles.eventImage}
+                  contentFit="cover"
+                  transition={200}
+                  allowDownscaling
+                  placeholder={{ blurhash: 'L6PZfSi_.AyE_3t7t7R**0o#DgR4' }}
+                />
+                <View style={styles.eventContent}>
+                  <Text style={styles.eventTitle}>{title}</Text>
+                  <View style={styles.eventDetails}>
+                    <View style={styles.detailRow}>
+                      <LocationIcon />
+                      <Text style={styles.detailText}>{location}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <CalendarIcon />
+                      <Text style={styles.detailText}>{date}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.buttonContainer}>
+                    <TouchableOpacity style={styles.viewDetailsButton} onPress={onFlip}>
+                      <Text style={styles.viewDetailsText}>View Details</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.shareButton}>
+                      <ShareIcon />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <View style={styles.detailRow}>
-                  <CalendarIcon />
-                  <Text style={styles.detailText}>{date}</Text>
-                </View>
-              </View>
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.viewDetailsButton} onPress={onFlip}>
-                  <Text style={styles.viewDetailsText}>View Details</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.shareButton}>
-                  <ShareIcon />
-                </TouchableOpacity>
-              </View>
+              </Animated.ScrollView>
+
+              {/* Custom Scrollbar for front face */}
+              <CustomScrollbar
+                scrollY={frontScrollY}
+                contentHeight={frontContentHeight}
+                scrollViewHeight={frontScrollViewHeight}
+                onScrollTo={handleFrontScrollTo}
+              />
             </View>
-          </>
+          </GestureDetector>
         }
         back={
-          <GestureDetector gesture={scrollViewGesture}>
+          <GestureDetector gesture={backScrollViewGesture}>
             <View style={styles.backFaceContainer}>
               <Animated.ScrollView
                 ref={scrollViewRef}
@@ -288,6 +333,18 @@ const styles = StyleSheet.create({
   },
   eventContent: {
     padding: 20,
+  },
+  frontFaceContainer: {
+    backgroundColor: '#151515',
+    width: '100%',
+    height: '100%',
+    flexDirection: 'column',
+  },
+  frontScrollView: {
+    flex: 1,
+  },
+  frontScrollViewContent: {
+    paddingBottom: 20,
   },
   backFaceContainer: {
     backgroundColor: '#151515',
