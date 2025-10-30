@@ -126,9 +126,29 @@ function transformToDiscoveredEvent(data: PerplexityEventData, imageUrl?: string
 }
 
 /**
+ * Sanitize location input to prevent prompt injection
+ */
+function sanitizeLocationInput(location: string): string {
+  // Remove control characters, quotes, backticks, and other prompt injection markers
+  const sanitized = location
+    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+    .replace(/[<>]/g, '') // Remove HTML-like tags
+    .replace(/[`'"]/g, '') // Remove quotes and backticks (prompt injection markers)
+    .replace(/[\{\}\[\]]/g, '') // Remove JSON/code delimiters
+    .replace(/\\/g, '') // Remove backslashes (escape sequences)
+    .trim()
+    .substring(0, 200); // Limit length to prevent abuse
+
+  return sanitized;
+}
+
+/**
  * Create the prompt for event generation
  */
 function createEventGenerationPrompt(location: string): string {
+  // Sanitize location input to prevent prompt injection
+  const sanitizedLocation = sanitizeLocationInput(location);
+  
   // Calculate date range (next 30 days)
   const today = new Date();
   const endDate = new Date();
@@ -227,7 +247,7 @@ USER PROMPT:
 Find political events near the user and return JSON ONLY per the schema.
 
 Location:
-- City, State: ${location}
+- City, State: ${sanitizedLocation}
 
 Time window:
 - Start: ${startDateStr}
