@@ -129,10 +129,13 @@ function transformToDiscoveredEvent(data: PerplexityEventData, imageUrl?: string
  * Sanitize location input to prevent prompt injection
  */
 function sanitizeLocationInput(location: string): string {
-  // Remove control characters and limit length
+  // Remove control characters, quotes, backticks, and other prompt injection markers
   const sanitized = location
     .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
     .replace(/[<>]/g, '') // Remove HTML-like tags
+    .replace(/[`'"]/g, '') // Remove quotes and backticks (prompt injection markers)
+    .replace(/[\{\}\[\]]/g, '') // Remove JSON/code delimiters
+    .replace(/\\/g, '') // Remove backslashes (escape sequences)
     .trim()
     .substring(0, 200); // Limit length to prevent abuse
 

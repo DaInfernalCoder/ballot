@@ -65,6 +65,9 @@ export async function cacheEvents(
   }
 }
 
+// Maximum age for cache entries (1 year in milliseconds)
+const MAX_CACHE_AGE_MS = 365 * 24 * 60 * 60 * 1000;
+
 /**
  * Validate cache entry structure and data types
  */
@@ -84,7 +87,7 @@ function validateCacheEntry(entry: any): entry is CacheEntry {
 
   // Validate timestamp is reasonable (not in future, not too old)
   const now = Date.now();
-  if (entry.timestamp > now || entry.timestamp < (now - 365 * 24 * 60 * 60 * 1000)) {
+  if (entry.timestamp > now || entry.timestamp < (now - MAX_CACHE_AGE_MS)) {
     return false;
   }
 

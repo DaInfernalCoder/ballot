@@ -18,7 +18,6 @@ const SUSPICIOUS_PATTERNS = [
   /vbscript:/i,
   /file:/i,
   /about:/i,
-  /@/,  // URLs with @ can be used for phishing (e.g., https://trusted.com@attacker.com)
 ];
 
 /**
@@ -55,6 +54,12 @@ export function isValidUrl(url: string | null | undefined): boolean {
     // Validate protocol
     if (!ALLOWED_PROTOCOLS.includes(urlObj.protocol as any)) {
       console.warn('[URLValidator] Invalid protocol:', urlObj.protocol);
+      return false;
+    }
+
+    // Check for @ in hostname (phishing attempt like https://trusted.com@attacker.com)
+    if (urlObj.hostname.includes('@')) {
+      console.warn('[URLValidator] Suspicious @ in hostname:', urlObj.hostname);
       return false;
     }
 
@@ -123,16 +128,7 @@ export function sanitizeUrl(url: string | null | undefined): string | null {
   }
 }
 
-/**
- * Validate and sanitize URL for display
- * Returns a safe URL string or null
- * 
- * @param url - URL to validate
- * @returns Safe URL or null
- */
-export function validateAndSanitizeUrl(url: string | null | undefined): string | null {
-  return sanitizeUrl(url);
-}
+
 
 /**
  * Get display-friendly URL (truncate long URLs)
