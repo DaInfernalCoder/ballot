@@ -66,6 +66,46 @@ export async function cacheEvents(
 }
 
 /**
+ * Validate cache entry structure and data types
+ */
+function validateCacheEntry(entry: any): entry is CacheEntry {
+  // Check basic structure
+  if (typeof entry !== 'object' || entry === null) {
+    return false;
+  }
+
+  // Validate required fields
+  if (typeof entry.location !== 'string' || 
+      !Array.isArray(entry.events) || 
+      typeof entry.timestamp !== 'number' ||
+      typeof entry.version !== 'number') {
+    return false;
+  }
+
+  // Validate timestamp is reasonable (not in future, not too old)
+  const now = Date.now();
+  if (entry.timestamp > now || entry.timestamp < (now - 365 * 24 * 60 * 60 * 1000)) {
+    return false;
+  }
+
+  // Validate each event in the array
+  for (const event of entry.events) {
+    if (typeof event !== 'object' || event === null) {
+      return false;
+    }
+    
+    // Validate required event fields
+    if (typeof event.id !== 'string' ||
+        typeof event.title !== 'string' ||
+        typeof event.location !== 'string') {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Load events from cache
  */
 export async function loadCachedEvents(
@@ -81,11 +121,19 @@ export async function loadCachedEvents(
       return null;
     }
 
-    const entry: CacheEntry = JSON.parse(cached);
+    // Parse JSON with error handling
+    let entry: any;
+    try {
+      entry = JSON.parse(cached);
+    } catch (parseError) {
+      console.error('[EventCache] Failed to parse cache JSON, clearing...', parseError);
+      await clearCacheForLocation(location);
+      return null;
+    }
 
-    // Validate cache structure
-    if (!entry.events || !Array.isArray(entry.events) || !entry.timestamp) {
-      console.warn('[EventCache] Invalid cache structure, clearing...');
+    // Validate cache structure and data types
+    if (!validateCacheEntry(entry)) {
+      console.warn('[EventCache] Invalid cache structure or data, clearing...');
       await clearCacheForLocation(location);
       return null;
     }

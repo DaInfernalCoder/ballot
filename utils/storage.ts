@@ -45,6 +45,39 @@ export async function saveSavedEvents(events: SerializedEvent[]): Promise<void> 
 }
 
 /**
+ * Validate storage data structure
+ */
+function validateStorageData(data: any): data is StorageData {
+  // Check basic structure
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  // Validate required fields
+  if (typeof data.version !== 'number' || !Array.isArray(data.events)) {
+    return false;
+  }
+
+  // Validate each event in the array
+  for (const event of data.events) {
+    if (typeof event !== 'object' || event === null) {
+      return false;
+    }
+    
+    // Validate required event fields
+    if (typeof event.id !== 'string' ||
+        typeof event.title !== 'string' ||
+        typeof event.location !== 'string' ||
+        typeof event.date !== 'string' ||
+        typeof event.imageKey !== 'string') {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
  * Load saved events from AsyncStorage
  */
 export async function loadSavedEvents(): Promise<SerializedEvent[]> {
@@ -52,7 +85,20 @@ export async function loadSavedEvents(): Promise<SerializedEvent[]> {
     const raw = await AsyncStorage.getItem(STORAGE_KEYS.SAVED_EVENTS);
     if (!raw) return [];
 
-    const data: StorageData = JSON.parse(raw);
+    // Parse JSON with error handling
+    let data: any;
+    try {
+      data = JSON.parse(raw);
+    } catch (parseError) {
+      console.error('[Storage] Failed to parse storage JSON:', parseError);
+      return [];
+    }
+
+    // Validate storage data structure
+    if (!validateStorageData(data)) {
+      console.error('[Storage] Invalid storage data structure');
+      return [];
+    }
 
     // Handle data migration if needed
     if (data.version !== CURRENT_DATA_VERSION) {
